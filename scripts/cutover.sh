@@ -473,7 +473,8 @@ until_ok "Neon production variables" check_neon_env
 # ── 8 ─────────────────────────────────────────────────────────────────────
 stage "Migrate the production database"
 say "Applies drizzle/ to the empty production branch (ADR-0004: no data to move)."
-say "Every later deploy migrates too: vercel.json runs 'pnpm db:migrate' before the build."
+say "Every later production deploy migrates too (vercel.json). A preview migrates only its"
+say "own Neon branch: it skips migrations when its database host is production's."
 prod_db=""
 if file=$(pull_env production); then
   prod_db=$(grep -E '^DATABASE_URL_UNPOOLED=' "$file" | head -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
@@ -488,6 +489,13 @@ if confirm "Run 'pnpm db:migrate' against production now?"; then
   DATABASE_URL_UNPOOLED="$prod_db" pnpm db:migrate
 fi
 until_ok "production migrations" env DATABASE_URL_UNPOOLED="$prod_db" node scripts/cutover/verify.ts migrations
+# Not a secret: stage 9 gives it to Preview, so a preview build never migrates production.
+if prod_host=$(node -e 'console.log(new URL(process.argv[1]).hostname)' "$prod_db" 2>/dev/null); then
+  write_env PROD_DATABASE_HOST "$prod_host"
+else
+  PROD_DATABASE_HOST=$(_existing PROD_DATABASE_HOST || true)
+  warn "Couldn't read the host from that connection string; previews won't migrate."
+fi
 unset prod_db
 
 # ── 9 ─────────────────────────────────────────────────────────────────────
@@ -503,7 +511,8 @@ dev_github_id=$(ENV_FILE=.env _existing GITHUB_CLIENT_ID || true)
 dev_github_secret=$(ENV_FILE=.env _existing GITHUB_CLIENT_SECRET || true)
 printf '\n'
 note "Production: BETTER_AUTH_URL=$PROD_URL, BETTER_AUTH_SECRET, production OAuth apps."
-note "Preview:    BETTER_AUTH_URL=$PROD_URL, its own secret, development OAuth apps."
+note "Preview:    BETTER_AUTH_URL=$PROD_URL, its own secret, development OAuth apps,"
+note "            PRODUCTION_DATABASE_HOST=$PROD_DATABASE_HOST."
 note "Removed:    ${LEGACY_VARS[*]} (all environments)."
 if confirm "Write these to the Vercel project?"; then
   vercel_env BETTER_AUTH_URL production "$PROD_URL"
@@ -518,6 +527,7 @@ if confirm "Write these to the Vercel project?"; then
   vercel_env GOOGLE_CLIENT_SECRET preview "$dev_google_secret" sensitive
   vercel_env GITHUB_CLIENT_ID preview "$dev_github_id"
   vercel_env GITHUB_CLIENT_SECRET preview "$dev_github_secret" sensitive
+  vercel_env PRODUCTION_DATABASE_HOST preview "$PROD_DATABASE_HOST"
   for name in "${LEGACY_VARS[@]}"; do
     if vercel env rm "$name" --yes; then
       printf '  %s✓ removed%s %s\n' "$GREEN" "$RESET" "$name"
@@ -537,18 +547,12 @@ say "create Action, when the request has no session cookie."
 printf '\n'
 warn "Trade-off: the WAF can only see whether the session cookie exists, not whether"
 warn "it is valid. A script that sends any cookie with that name skips the limit."
-note "Limiting every create instead closes that gap, but also limits signed-in Users"
-note "(30 per minute per IP is far above human use). The spec asks for anonymous only."
-scope="anonymous"
+note "The spec puts no limit on signed-in actions, so the rule leaves them alone."
 conditions=(
   --condition '{"type":"path","op":"pre","value":"/_actions/links.create"}'
   --condition '{"type":"method","op":"eq","value":"POST"}'
+  --condition '{"type":"cookie","key":"__Secure-better-auth.session_token","op":"nex"}'
 )
-if confirm "Limit every create instead, signed-in Users included?"; then
-  scope="every-create"
-else
-  conditions+=(--condition '{"type":"cookie","key":"__Secure-better-auth.session_token","op":"nex"}')
-fi
 if confirm "Add the rule now with the Vercel CLI?"; then
   vercel firewall rules add "Anonymous Link creation" "${conditions[@]}" \
     --description "Anonymous Link creation: 30 per minute per IP (spec #1)" \
@@ -562,7 +566,7 @@ else
   open_url "https://vercel.com/dashboard"
   step "Project > Firewall > Configure > New Rule, name 'Anonymous Link creation'."
   step "If Request Path starts with /_actions/links.create, and Method equals POST"
-  [[ "$scope" == anonymous ]] && step "  and Cookie __Secure-better-auth.session_token does not exist,"
+  step "  and Cookie __Secure-better-auth.session_token does not exist,"
   step "Then Rate Limit: Fixed Window, 60 seconds, 30 requests, key IP, action Too Many Requests."
   step "Save, then Review Changes > Publish."
 fi
@@ -571,7 +575,7 @@ pause "Press Enter when the rule shows as published (not a draft)."
 note "Optional check: 31 invalid creates from this IP (no Link is created), then one"
 note "with a fake session cookie. Your IP can't create Links for up to a minute after."
 if confirm "Run the check now?"; then
-  until_ok "rate limit probe" verify rate-limit "$PROD_URL" "$scope"
+  until_ok "rate limit probe" verify rate-limit "$PROD_URL"
 fi
 
 # ── 11 ────────────────────────────────────────────────────────────────────

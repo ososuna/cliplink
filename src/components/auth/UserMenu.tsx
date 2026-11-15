@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { dashboardPath } from '@/paths';
 
 type Props = { name: string; image: string | null };
 
@@ -36,7 +37,7 @@ const UserMenu = ({ name, image }: Props) => {
         <DropdownMenuLabel>{name}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <a href="/dashboard">Dashboard</a>
+          <a href={dashboardPath}>Dashboard</a>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <a href="/my-account">My Account</a>

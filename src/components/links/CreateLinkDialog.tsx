@@ -1,10 +1,15 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { actions, isInputError } from 'astro:actions';
+import { isInputError } from 'astro:actions';
 import { navigate } from 'astro:transitions/client';
 import { z } from 'astro/zod';
-import { Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import {
+  fallbackMessage,
+  Field,
+  fieldAria,
+  PendingButton,
+} from '@/components/form';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -15,8 +20,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { createLink } from '@/components/links/create-link';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 // Not '@/links': that would pull the database code into the browser bundle.
 import { destinationSchema } from '@/links/destination';
 import { nameSchema } from '@/links/name';
@@ -25,8 +30,6 @@ const formSchema = z.object({
   name: nameSchema,
   destination: destinationSchema,
 });
-
-const fallbackMessage = 'Something went wrong. Please try again.';
 
 export default function CreateLinkDialog() {
   const [open, setOpen] = useState(false);
@@ -42,7 +45,7 @@ export default function CreateLinkDialog() {
   });
 
   const onSubmit = handleSubmit(async (input) => {
-    const { data, error } = await actions.links.create(input);
+    const { data, error } = await createLink(input);
     if (data) {
       setOpen(false);
       reset();
@@ -76,8 +79,7 @@ export default function CreateLinkDialog() {
             <Input
               id="name"
               autoComplete="off"
-              aria-invalid={!!errors.name}
-              aria-describedby={errors.name ? 'name-error' : undefined}
+              {...fieldAria({ id: 'name', error: errors.name?.message })}
               {...register('name')}
             />
           </Field>
@@ -90,50 +92,25 @@ export default function CreateLinkDialog() {
               id="destination"
               autoComplete="off"
               placeholder="https://example/long/url"
-              aria-invalid={!!errors.destination}
-              aria-describedby={
-                errors.destination ? 'destination-error' : undefined
-              }
+              {...fieldAria({
+                id: 'destination',
+                error: errors.destination?.message,
+              })}
               {...register('destination')}
             />
           </Field>
           <DialogFooter>
-            <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="animate-spin" /> Shortening...
-                </>
-              ) : (
-                'Shorten URL'
-              )}
-            </Button>
+            <PendingButton
+              type="submit"
+              pending={isSubmitting}
+              pendingLabel="Shortening..."
+              className="w-full"
+            >
+              Shorten URL
+            </PendingButton>
           </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Field({
-  id,
-  label,
-  error,
-  children,
-}: {
-  id: string;
-  label: string;
-  error: string | undefined;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="grid gap-2">
-      <Label htmlFor={id}>{label}</Label>
-      {children}
-      {error && (
-        <p id={`${id}-error`} className="text-sm text-destructive">
-          {error}
-        </p>
-      )}
-    </div>
   );
 }

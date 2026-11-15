@@ -12,3 +12,4 @@ export {
   type Links,
 } from '@/links/links';
 export { nameMaxLength, nameSchema } from '@/links/name';
+export { linkPath, linkUrl } from '@/links/url';

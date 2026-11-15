@@ -1,6 +1,7 @@
-import { Loader2, Trash } from 'lucide-react';
+import { Trash } from 'lucide-react';
 import { useState } from 'react';
 import { authClient } from '@/auth/client';
+import { fallbackMessage, Field, PendingButton } from '@/components/form';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,15 +13,12 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
-const confirmation = 'Delete my account';
-
-const fallbackMessage = 'Something went wrong. Please try again.';
+const confirmation = 'Delete my User';
 
 // Better Auth only deletes a User whose session is recent (a day, by default).
 const staleSessionMessage =
-  'For your security, log out and sign in again before deleting your account.';
+  'For your security, log out and sign in again before deleting your User.';
 
 export default function DeleteUserDialog() {
   const [open, setOpen] = useState(false);
@@ -63,49 +61,45 @@ export default function DeleteUserDialog() {
           variant="outline"
           className="border-destructive text-destructive"
         >
-          <Trash /> Delete Account
+          <Trash /> Delete User
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Are you absolutely sure?</DialogTitle>
           <DialogDescription>
-            This deletes your account and every URL you shortened. Their short
-            URLs stop working. This action cannot be undone.
+            This deletes your User and every Link you own. Those Links stop
+            working. This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onConfirm} noValidate className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="delete-user-confirmation">
-              Type &quot;{confirmation}&quot; to confirm
-            </Label>
+          <Field
+            id="delete-user-confirmation"
+            label={<>Type &quot;{confirmation}&quot; to confirm</>}
+          >
             <Input
               id="delete-user-confirmation"
               autoComplete="off"
               value={typed}
               onChange={(event) => setTyped(event.target.value)}
             />
-          </div>
+          </Field>
           {failure && (
             <p role="alert" className="text-sm text-destructive">
               {failure}
             </p>
           )}
           <DialogFooter>
-            <Button
+            <PendingButton
               type="submit"
               variant="destructive"
-              disabled={!confirmed || deleting}
+              pending={deleting}
+              pendingLabel="Deleting..."
+              disabled={!confirmed}
               className="w-full"
             >
-              {deleting ? (
-                <>
-                  <Loader2 className="animate-spin" /> Deleting...
-                </>
-              ) : (
-                'Delete Account'
-              )}
-            </Button>
+              Delete User
+            </PendingButton>
           </DialogFooter>
         </form>
       </DialogContent>

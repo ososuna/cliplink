@@ -1,13 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { actions, isInputError } from 'astro:actions';
+import { isInputError } from 'astro:actions';
 import { navigate } from 'astro:transitions/client';
 import { z } from 'astro/zod';
-import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { Button } from '@/components/ui/button';
+import {
+  fallbackMessage,
+  Field,
+  fieldAria,
+  PendingButton,
+} from '@/components/form';
 import { CardContent, CardFooter } from '@/components/ui/card';
+import { createLink } from '@/components/links/create-link';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 // Not '@/links': that would pull the database code into the browser bundle.
 import { destinationSchema } from '@/links/destination';
 
@@ -25,46 +29,37 @@ export default function ShortenForm() {
   });
 
   const onSubmit = handleSubmit(async (input) => {
-    const { data, error } = await actions.links.create(input);
+    const { data, error } = await createLink(input);
     if (data) return navigate(`/short/${data.code}`);
     const message = isInputError(error)
       ? error.fields.destination?.[0]
       : error.message;
-    setError('destination', {
-      message: message ?? 'Something went wrong. Please try again.',
-    });
+    setError('destination', { message: message || fallbackMessage });
   });
 
   const errorMessage = errors.destination?.message;
 
   return (
     <form onSubmit={onSubmit} noValidate>
-      <CardContent className="grid gap-2">
-        <Label htmlFor="destination">Long URL</Label>
-        <Input
-          id="destination"
-          autoComplete="off"
-          placeholder="https://example/long/url"
-          aria-invalid={!!errorMessage}
-          aria-describedby={errorMessage ? 'destination-error' : undefined}
-          {...register('destination')}
-        />
-        {errorMessage && (
-          <p id="destination-error" className="text-sm text-destructive">
-            {errorMessage}
-          </p>
-        )}
+      <CardContent>
+        <Field id="destination" label="Long URL" error={errorMessage}>
+          <Input
+            id="destination"
+            autoComplete="off"
+            placeholder="https://example/long/url"
+            {...fieldAria({ id: 'destination', error: errorMessage })}
+            {...register('destination')}
+          />
+        </Field>
       </CardContent>
       <CardFooter className="mt-4">
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? (
-            <>
-              <Loader2 className="animate-spin" /> Shortening...
-            </>
-          ) : (
-            'Shorten URL'
-          )}
-        </Button>
+        <PendingButton
+          type="submit"
+          pending={isSubmitting}
+          pendingLabel="Shortening..."
+        >
+          Shorten URL
+        </PendingButton>
       </CardFooter>
     </form>
   );

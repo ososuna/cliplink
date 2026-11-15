@@ -3,18 +3,17 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import * as authSchema from '@/auth/schema';
 import type { Db } from '@/db';
 import type { Links } from '@/links';
+import { signInPath } from '@/paths';
 
-export const signInPath = '/auth/login';
-
-type OAuthApp = { clientId: string; clientSecret: string };
+type ProviderCredentials = { clientId: string; clientSecret: string };
 
 export type AuthConfig = {
   db: Db;
   links: Pick<Links, 'deleteOwnerLinks'>;
   baseURL: string;
   secret: string;
-  google: OAuthApp;
-  github: OAuthApp;
+  google: ProviderCredentials;
+  github: ProviderCredentials;
 };
 
 export function createAuth({

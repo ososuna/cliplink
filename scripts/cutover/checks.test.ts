@@ -17,6 +17,8 @@ const production = {
   GITHUB_CLIENT_SECRET: 'github-secret',
 };
 
+const previewOnly = { PRODUCTION_DATABASE_HOST: 'direct.neon.tech' };
+
 function without(env: Record<string, string>, ...keys: string[]) {
   return Object.fromEntries(
     Object.entries(env).filter(([key]) => !keys.includes(key)),
@@ -43,7 +45,7 @@ describe('checkEnv', () => {
   it('does not expect the database variables in preview', () => {
     // Neon injects them into each preview deployment, not into the project settings.
     const env = without(production, 'DATABASE_URL', 'DATABASE_URL_UNPOOLED');
-    expect(checkEnv(env, 'preview')).toEqual([]);
+    expect(checkEnv({ ...env, ...previewOnly }, 'preview')).toEqual([]);
     expect(checkEnv(env, 'production')).toEqual([
       'DATABASE_URL is missing',
       'DATABASE_URL_UNPOOLED is missing',
@@ -55,7 +57,14 @@ describe('checkEnv', () => {
     expect(checkEnv(env, 'production')).toEqual([
       'BETTER_AUTH_URL must be https://cliplink.app, not http://localhost:4321',
     ]);
-    expect(checkEnv(env, 'preview')).toEqual([]);
+    expect(checkEnv({ ...env, ...previewOnly }, 'preview')).toEqual([]);
+  });
+
+  it('expects preview to know the production database host', () => {
+    // Without it, a preview build can't tell it would migrate production.
+    expect(checkEnv(production, 'preview')).toEqual([
+      'PRODUCTION_DATABASE_HOST is missing',
+    ]);
   });
 
   it('rejects a short BETTER_AUTH_SECRET, and skips values Vercel hides', () => {
@@ -111,27 +120,24 @@ describe('checkRateLimit', () => {
   const limited = [...Array<number>(30).fill(400), 429];
 
   it('passes when anonymous creation hits 429 and a session cookie does not', () => {
-    expect(
-      checkRateLimit({ anonymous: limited, withSession: 400 }, 'anonymous'),
-    ).toEqual([]);
+    expect(checkRateLimit({ anonymous: limited, withSession: 400 })).toEqual(
+      [],
+    );
   });
 
   it('reports a rule that never limits', () => {
     expect(
-      checkRateLimit(
-        { anonymous: Array<number>(31).fill(400), withSession: 400 },
-        'anonymous',
-      ),
+      checkRateLimit({
+        anonymous: Array<number>(31).fill(400),
+        withSession: 400,
+      }),
     ).toEqual(['31 anonymous requests in a minute never got a 429']);
   });
 
-  it('expects the session cookie to be limited too when the rule covers every create', () => {
-    expect(
-      checkRateLimit({ anonymous: limited, withSession: 400 }, 'every-create'),
-    ).toEqual(['A request with a session cookie got 400, expected 429']);
-    expect(
-      checkRateLimit({ anonymous: limited, withSession: 429 }, 'anonymous'),
-    ).toEqual(['A request with a session cookie got 429, expected no limit']);
+  it('reports a rule that limits signed-in creation too', () => {
+    expect(checkRateLimit({ anonymous: limited, withSession: 429 })).toEqual([
+      'A request with a session cookie got 429, expected no limit',
+    ]);
   });
 });
 

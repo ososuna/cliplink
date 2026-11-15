@@ -9,7 +9,7 @@ for (const privatePage of ['/dashboard', '/my-account']) {
 
     await expect(page).toHaveURL('/auth/login');
     await expect(
-      page.getByRole('heading', { name: 'Log in to your account' }),
+      page.getByRole('heading', { name: 'Log in to Cliplink' }),
     ).toBeVisible();
   });
 }

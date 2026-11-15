@@ -69,3 +69,24 @@ test('an unknown Code has no confirmation page', async ({ page }) => {
   expect(response?.status()).toBe(404);
   await expect(page.getByText('Page not found')).toBeVisible();
 });
+
+test('a Visitor creating Links too fast is told to wait a minute', async ({
+  page,
+}) => {
+  // Vercel's firewall answers before the app, so the reply is not an Action response.
+  await page.route('**/_actions/links.create**', (route) =>
+    route.fulfill({
+      status: 429,
+      contentType: 'text/plain',
+      body: 'Too Many Requests',
+    }),
+  );
+  await page.goto('/');
+  await page.getByLabel('Long URL').fill('https://example.com/too/fast');
+  await page.getByRole('button', { name: 'Shorten URL' }).click();
+
+  await expect(
+    page.getByText('Too many Links too fast. Try again in a minute.'),
+  ).toBeVisible();
+  await expect(page).toHaveURL('/');
+});

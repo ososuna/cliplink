@@ -1,7 +1,8 @@
 import { actions } from 'astro:actions';
 import { navigate } from 'astro:transitions/client';
-import { Loader2, Trash } from 'lucide-react';
+import { Trash } from 'lucide-react';
 import { useState } from 'react';
+import { fallbackMessage, PendingButton } from '@/components/form';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -12,8 +13,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-
-const fallbackMessage = 'Something went wrong. Please try again.';
 
 export default function DeleteLinkDialog({ linkId }: { linkId: string }) {
   const [open, setOpen] = useState(false);
@@ -51,9 +50,7 @@ export default function DeleteLinkDialog({ linkId }: { linkId: string }) {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            Are you sure you want to delete this short URL?
-          </DialogTitle>
+          <DialogTitle>Are you sure you want to delete this Link?</DialogTitle>
           <DialogDescription>This action cannot be undone.</DialogDescription>
         </DialogHeader>
         {failure && (
@@ -62,21 +59,16 @@ export default function DeleteLinkDialog({ linkId }: { linkId: string }) {
           </p>
         )}
         <DialogFooter>
-          <Button
+          <PendingButton
             type="button"
             variant="destructive"
-            disabled={deleting}
+            pending={deleting}
+            pendingLabel="Deleting..."
             className="w-full"
             onClick={onConfirm}
           >
-            {deleting ? (
-              <>
-                <Loader2 className="animate-spin" /> Deleting...
-              </>
-            ) : (
-              'Delete URL'
-            )}
-          </Button>
+            Delete Link
+          </PendingButton>
         </DialogFooter>
       </DialogContent>
     </Dialog>

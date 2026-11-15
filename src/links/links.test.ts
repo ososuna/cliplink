@@ -540,6 +540,29 @@ describe('renameLink', () => {
     expect(renamed.name).toBe('Docs (3)');
   });
 
+  it('gives two Links renamed to the same Name at once different Names', async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const create = (name: string) =>
+      links.createLink({
+        destination: 'https://example.com/docs',
+        name,
+        ownerId: owner,
+      });
+    const [first, second] = [await create('A'), await create('B')];
+
+    const renamed = await Promise.all(
+      [first, second].map((link) =>
+        links.renameLink({ ownerId: owner, linkId: link.id, name: 'Docs' }),
+      ),
+    );
+
+    expect(renamed.map((link) => link.name).sort()).toEqual([
+      'Docs',
+      'Docs (2)',
+    ]);
+  });
+
   it('keeps the Name when it is renamed to its own Name', async () => {
     const links = createLinks({ db });
     const owner = await createOwner();

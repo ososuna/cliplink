@@ -2,9 +2,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { actions, isInputError } from 'astro:actions';
 import { navigate } from 'astro:transitions/client';
 import { z } from 'astro/zod';
-import { Loader2, TextCursorInput } from 'lucide-react';
+import { TextCursorInput } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import {
+  fallbackMessage,
+  Field,
+  fieldAria,
+  PendingButton,
+} from '@/components/form';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -16,13 +22,10 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 // Not '@/links': that would pull the database code into the browser bundle.
 import { nameSchema } from '@/links/name';
 
 const formSchema = z.object({ name: nameSchema });
-
-const fallbackMessage = 'Something went wrong. Please try again.';
 
 export default function RenameLinkDialog({
   linkId,
@@ -42,6 +45,8 @@ export default function RenameLinkDialog({
     resolver: zodResolver(formSchema),
     defaultValues: { name: name ?? '' },
   });
+
+  const fieldId = `rename-${linkId}`;
 
   const onOpenChange = (next: boolean) => {
     if (next) reset({ name: name ?? '' });
@@ -69,42 +74,29 @@ export default function RenameLinkDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Rename URL</DialogTitle>
+          <DialogTitle>Rename Link</DialogTitle>
           <DialogDescription>
             Enter a new name, or leave it blank to remove the name.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} noValidate className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor={`rename-${linkId}`}>Name</Label>
+          <Field id={fieldId} label="Name" error={errors.name?.message}>
             <Input
-              id={`rename-${linkId}`}
+              id={fieldId}
               autoComplete="off"
-              aria-invalid={!!errors.name}
-              aria-describedby={
-                errors.name ? `rename-${linkId}-error` : undefined
-              }
+              {...fieldAria({ id: fieldId, error: errors.name?.message })}
               {...register('name')}
             />
-            {errors.name && (
-              <p
-                id={`rename-${linkId}-error`}
-                className="text-sm text-destructive"
-              >
-                {errors.name.message}
-              </p>
-            )}
-          </div>
+          </Field>
           <DialogFooter>
-            <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="animate-spin" /> Renaming...
-                </>
-              ) : (
-                'Rename'
-              )}
-            </Button>
+            <PendingButton
+              type="submit"
+              pending={isSubmitting}
+              pendingLabel="Renaming..."
+              className="w-full"
+            >
+              Rename
+            </PendingButton>
           </DialogFooter>
         </form>
       </DialogContent>

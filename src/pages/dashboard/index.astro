@@ -13,6 +13,9 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import { dashboardPath } from '@/paths';
+
+const defaultLimit = 9;
 
 // The middleware sends Visitors to sign in, so a User is always present here.
 const owner = Astro.locals.user!;
@@ -20,7 +23,7 @@ const owner = Astro.locals.user!;
 // Malformed query values fall back to the defaults rather than failing the page.
 const query = z.object({
   page: z.coerce.number().int().min(1).catch(1),
-  limit: z.coerce.number().int().min(1).max(60).catch(9),
+  limit: z.coerce.number().int().min(1).max(60).catch(defaultLimit),
   search: z.string().catch(''),
 });
 const { page, limit, search } = query.parse({
@@ -33,9 +36,9 @@ const listed = await links.listLinks(owner.id, { search, page, limit });
 
 function pageHref(target: number) {
   const params = new URLSearchParams({ page: String(target) });
-  if (limit !== 9) params.set('limit', String(limit));
+  if (limit !== defaultLimit) params.set('limit', String(limit));
   if (search) params.set('search', search);
-  return `/dashboard?${params}`;
+  return `${dashboardPath}?${params}`;
 }
 const hasPrevious = page > 1;
 const hasNext = page < listed.totalPages;
@@ -54,13 +57,13 @@ const hasNext = page < listed.totalPages;
       <p class="px-8 text-center text-sm text-muted-foreground">
         {search ? (
           <>
-            No URLs found matching "<strong>{search}</strong>". Please try a
+            No Links found matching "<strong>{search}</strong>". Please try a
             different search term.
           </>
         ) : (
           <>
-            You haven't shortened any URLs yet. Click the{' '}
-            <strong>"Shorten URL"</strong> button to shorten your first URL.
+            You haven't created any Links yet. Click the{' '}
+            <strong>"Shorten URL"</strong> button to create your first Link.
           </>
         )}
       </p>
