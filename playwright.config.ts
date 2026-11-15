@@ -1,8 +1,8 @@
+import 'dotenv/config';
 import { defineConfig, devices } from '@playwright/test';
-import { e2eEnv } from './e2e/support/env';
+import { e2eEnv, e2eServer } from './e2e/support/env';
 
-const port = 4321;
-const baseURL = e2eEnv.BETTER_AUTH_URL;
+const { port, baseURL } = e2eServer;
 
 export default defineConfig({
   testDir: './e2e',
@@ -12,7 +12,7 @@ export default defineConfig({
   use: { baseURL, trace: 'on-first-retry' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'pnpm build:e2e && pnpm start:e2e',
+    command: 'pnpm db:migrate && pnpm build:e2e && pnpm start:e2e',
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,

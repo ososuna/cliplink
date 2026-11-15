@@ -9,11 +9,11 @@ import {
 } from 'astro:env/server';
 import { createAuth } from '@/auth';
 import { createDb } from '@/db';
+import { createLinks } from '@/links';
 
-// The app's single instances, built from astro:env. Modules take these as arguments
-// instead of importing astro:env, so Vitest, drizzle-kit, and Playwright can load them.
+// The app's single instances. Modules take their dependencies as arguments, so only this file reads astro:env.
 export const db = createDb(DATABASE_URL);
-
+export const links = createLinks({ db });
 export const auth = createAuth({
   db,
   baseURL: BETTER_AUTH_URL,
