@@ -6,6 +6,8 @@ type Env = Record<string, string | undefined>;
 // DATABASE_URL_UNPOOLED for `pnpm db:migrate` in the Vercel build (vercel.json).
 // Neon sets the database ones; in preview it injects them per deployment instead.
 const database = ['DATABASE_URL', 'DATABASE_URL_UNPOOLED'];
+// Lets a preview build refuse to migrate production (scripts/vercel-build/should-migrate.ts).
+const previewOnly = ['PRODUCTION_DATABASE_HOST'];
 const auth = [
   'BETTER_AUTH_URL',
   'BETTER_AUTH_SECRET',
@@ -31,7 +33,7 @@ export function checkEnv(env: Env, target: 'production' | 'preview') {
   const url = env.BETTER_AUTH_URL;
   const secret = env.BETTER_AUTH_SECRET;
   return [
-    ...[...(target === 'production' ? database : []), ...auth]
+    ...[...(target === 'production' ? database : previewOnly), ...auth]
       .filter((name) => env[name] === undefined)
       .map((name) => `${name} is missing`),
     ...(target === 'production' && url && url !== productionUrl

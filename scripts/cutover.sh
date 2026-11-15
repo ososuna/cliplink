@@ -473,7 +473,8 @@ until_ok "Neon production variables" check_neon_env
 # ── 8 ─────────────────────────────────────────────────────────────────────
 stage "Migrate the production database"
 say "Applies drizzle/ to the empty production branch (ADR-0004: no data to move)."
-say "Every later deploy migrates too: vercel.json runs 'pnpm db:migrate' before the build."
+say "Every later production deploy migrates too (vercel.json). A preview migrates only its"
+say "own Neon branch: it skips migrations when its database host is production's."
 prod_db=""
 if file=$(pull_env production); then
   prod_db=$(grep -E '^DATABASE_URL_UNPOOLED=' "$file" | head -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
@@ -488,6 +489,13 @@ if confirm "Run 'pnpm db:migrate' against production now?"; then
   DATABASE_URL_UNPOOLED="$prod_db" pnpm db:migrate
 fi
 until_ok "production migrations" env DATABASE_URL_UNPOOLED="$prod_db" node scripts/cutover/verify.ts migrations
+# Not a secret: stage 9 gives it to Preview, so a preview build never migrates production.
+if prod_host=$(node -e 'console.log(new URL(process.argv[1]).hostname)' "$prod_db" 2>/dev/null); then
+  write_env PROD_DATABASE_HOST "$prod_host"
+else
+  PROD_DATABASE_HOST=$(_existing PROD_DATABASE_HOST || true)
+  warn "Couldn't read the host from that connection string; previews won't migrate."
+fi
 unset prod_db
 
 # ── 9 ─────────────────────────────────────────────────────────────────────
@@ -503,7 +511,8 @@ dev_github_id=$(ENV_FILE=.env _existing GITHUB_CLIENT_ID || true)
 dev_github_secret=$(ENV_FILE=.env _existing GITHUB_CLIENT_SECRET || true)
 printf '\n'
 note "Production: BETTER_AUTH_URL=$PROD_URL, BETTER_AUTH_SECRET, production OAuth apps."
-note "Preview:    BETTER_AUTH_URL=$PROD_URL, its own secret, development OAuth apps."
+note "Preview:    BETTER_AUTH_URL=$PROD_URL, its own secret, development OAuth apps,"
+note "            PRODUCTION_DATABASE_HOST=$PROD_DATABASE_HOST."
 note "Removed:    ${LEGACY_VARS[*]} (all environments)."
 if confirm "Write these to the Vercel project?"; then
   vercel_env BETTER_AUTH_URL production "$PROD_URL"
@@ -518,6 +527,7 @@ if confirm "Write these to the Vercel project?"; then
   vercel_env GOOGLE_CLIENT_SECRET preview "$dev_google_secret" sensitive
   vercel_env GITHUB_CLIENT_ID preview "$dev_github_id"
   vercel_env GITHUB_CLIENT_SECRET preview "$dev_github_secret" sensitive
+  vercel_env PRODUCTION_DATABASE_HOST preview "$PROD_DATABASE_HOST"
   for name in "${LEGACY_VARS[@]}"; do
     if vercel env rm "$name" --yes; then
       printf '  %s✓ removed%s %s\n' "$GREEN" "$RESET" "$name"
