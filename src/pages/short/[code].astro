@@ -14,13 +14,14 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { linkUrl } from '@/links';
 
 const { code = '' } = Astro.params;
 if (!(await links.findDestination(code))) {
   return new Response(null, { status: 404 });
 }
 
-const shortUrl = new URL(`/${code}`, Astro.url.origin).href;
+const shortUrl = linkUrl({ code, origin: Astro.url.origin });
 ---
 
 <HomeLayout>
