@@ -1,2 +1,3 @@
-// Feature modules add their tables here as they land (links, auth).
-export {};
+// Feature modules own their tables; this file collects them for Drizzle and drizzle-kit.
+// Relative paths, because drizzle-kit loads this file without the `@/` alias.
+export * from '../links/schema';
