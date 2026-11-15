@@ -3,7 +3,7 @@
 //   node scripts/cutover/verify.ts migrations          (reads DATABASE_URL_UNPOOLED)
 //   node scripts/cutover/verify.ts live <origin>
 //   node scripts/cutover/verify.ts redirect <short URL> <Destination>
-//   node scripts/cutover/verify.ts rate-limit <origin> <anonymous|every-create>
+//   node scripts/cutover/verify.ts rate-limit <origin>
 // Prints what it checked and exits 1 on any problem.
 import { readFileSync } from 'node:fs';
 import { parse } from 'dotenv';
@@ -19,10 +19,11 @@ import {
 const sessionCookie = '__Secure-better-auth.session_token';
 const createActionPath = '/_actions/links.create';
 
-async function env(target: string, file: string) {
+async function env({ target, file }: { target?: string; file?: string }) {
   if (target !== 'production' && target !== 'preview') {
     throw new Error(`Unknown environment ${target}`);
   }
+  if (!file) throw new Error('Pass the file from `vercel env pull`');
   return checkEnv(parse(readFileSync(file)), target);
 }
 
@@ -57,7 +58,7 @@ async function migrations() {
 }
 
 // The new app is live: Better Auth answers, and an old 8-character Code is a 404 (ADR-0004).
-async function live(origin: string) {
+async function live(origin = '') {
   const problems: string[] = [];
   const ok = await fetch(new URL('/api/auth/ok', origin));
   const body = ok.ok ? await ok.text() : '';
@@ -75,7 +76,13 @@ async function live(origin: string) {
   return problems;
 }
 
-async function redirect(shortUrl: string, destination: string) {
+async function redirect({
+  shortUrl = '',
+  destination = '',
+}: {
+  shortUrl?: string;
+  destination?: string;
+}) {
   const response = await fetch(shortUrl, { redirect: 'manual' });
   return checkRedirect(
     { status: response.status, location: response.headers.get('location') },
@@ -92,10 +99,7 @@ function postCreate(origin: string, headers: Record<string, string> = {}) {
   }).then((response) => response.status);
 }
 
-async function rateLimit(origin: string, scope: string) {
-  if (scope !== 'anonymous' && scope !== 'every-create') {
-    throw new Error(`Unknown scope ${scope}`);
-  }
+async function rateLimit(origin = '') {
   const anonymous: number[] = [];
   for (let i = 0; i < 31; i++) anonymous.push(await postCreate(origin));
   const withSession = await postCreate(origin, {
@@ -103,15 +107,15 @@ async function rateLimit(origin: string, scope: string) {
   });
   console.log(`anonymous: ${anonymous.join(' ')}`);
   console.log(`with a session cookie: ${withSession}`);
-  return checkRateLimit({ anonymous, withSession }, scope);
+  return checkRateLimit({ anonymous, withSession });
 }
 
-const commands: Record<string, (...args: string[]) => Promise<string[]>> = {
-  env,
-  migrations,
-  live,
-  redirect,
-  'rate-limit': rateLimit,
+const commands: Record<string, (args: string[]) => Promise<string[]>> = {
+  env: ([target, file]) => env({ target, file }),
+  migrations: () => migrations(),
+  live: ([origin]) => live(origin),
+  redirect: ([shortUrl, destination]) => redirect({ shortUrl, destination }),
+  'rate-limit': ([origin]) => rateLimit(origin),
 };
 
 const [name, ...args] = process.argv.slice(2);
@@ -120,7 +124,7 @@ if (!command) {
   console.error(`Usage: verify.ts <${Object.keys(commands).join('|')}> ...`);
   process.exit(2);
 }
-const problems = await command(...args);
+const problems = await command(args);
 for (const problem of problems) console.error(`  x ${problem}`);
 if (problems.length) process.exit(1);
 console.log(`  ok: ${name} passed`);
