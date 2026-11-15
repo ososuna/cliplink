@@ -1,0 +1,54 @@
+---
+import { ExternalLink } from 'lucide-react';
+import CopyButton from '@/components/links/CopyButton';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+} from '@/components/ui/card';
+import type { Link } from '@/links';
+
+interface Props {
+  link: Link;
+}
+
+const { link } = Astro.props;
+const shortUrl = new URL(`/${link.code}`, Astro.url.origin).href;
+const path = `/${link.code}`;
+---
+
+<article>
+  <Card className="h-full">
+    <CardHeader>
+      <div class="flex items-center gap-2">
+        <h2
+          class="flex-1 truncate text-lg leading-none font-semibold"
+          title={link.name ?? path}
+        >
+          {link.name ?? path}
+        </h2>
+        {link.name && (
+          <span class="shrink-0 text-sm text-muted-foreground">{path}</span>
+        )}
+      </div>
+      <CardDescription className="truncate" title={link.destination}>
+        {link.destination}
+      </CardDescription>
+    </CardHeader>
+    <CardFooter className="mt-auto flex gap-2">
+      <CopyButton client:load url={shortUrl} />
+      <Button asChild variant="outline" size="icon">
+        <a
+          href={link.destination}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Navigate"
+        >
+          <ExternalLink />
+        </a>
+      </Button>
+    </CardFooter>
+  </Card>
+</article>
