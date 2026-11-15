@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createAuth, type Auth } from '@/auth/auth';
 import { createTestDb } from '@/db/testing';
+import { createLinks } from '@/links';
 
 const baseURL = 'http://localhost:4321';
 
@@ -147,8 +148,10 @@ describe('sign-in with Google and GitHub', () => {
   let auth: Auth;
 
   beforeAll(async () => {
+    const db = await createTestDb();
     auth = createAuth({
-      db: await createTestDb(),
+      db,
+      links: createLinks({ db }),
       baseURL,
       secret: 'test-secret-at-least-thirty-two-characters-long',
       google: { clientId: 'google-client', clientSecret: 'google-secret' },

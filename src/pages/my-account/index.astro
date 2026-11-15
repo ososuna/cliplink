@@ -1,30 +1,72 @@
 ---
+import { auth } from '@/app';
+import DeleteUserDialog from '@/components/auth/DeleteUserDialog';
+import EditProfileForm from '@/components/auth/EditProfileForm';
 import UserAvatar from '@/components/auth/UserAvatar';
 import HomeLayout from '@/components/layout/HomeLayout.astro';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 // The middleware only lets signed-in Users reach this page.
 const user = Astro.locals.user!;
+
+const providerNames: Record<string, string> = {
+  github: 'GitHub',
+  google: 'Google',
+};
+// Better Auth lists only the signed-in User's own Provider links.
+const accounts = await auth.api.listUserAccounts({
+  headers: Astro.request.headers,
+});
+const providers = accounts
+  .map((account) => providerNames[account.providerId] ?? account.providerId)
+  .sort();
 ---
 
 <HomeLayout>
   <section class="container mx-auto self-start px-4 py-8">
     <h1 class="mb-8 text-2xl font-bold">My Account</h1>
-    <Card className="max-w-md">
-      <CardHeader>
-        <CardTitle>Profile Information</CardTitle>
-      </CardHeader>
-      <CardContent className="flex items-center gap-4">
-        <UserAvatar
-          name={user.name}
-          image={user.image ?? null}
-          className="h-16 w-16"
-        />
-        <div class="min-w-0">
-          <p class="truncate text-lg font-semibold">{user.name}</p>
-          <p class="truncate text-sm text-muted-foreground">{user.email}</p>
-        </div>
-      </CardContent>
-    </Card>
+    <div class="grid items-start gap-4 md:grid-cols-2">
+      <Card>
+        <CardHeader>
+          <CardTitle>Profile Information</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-6">
+          <div class="flex items-center gap-4">
+            <UserAvatar
+              name={user.name}
+              image={user.image ?? null}
+              className="h-16 w-16"
+            />
+            <div class="min-w-0">
+              <p class="truncate text-lg font-semibold">{user.name}</p>
+              <p class="truncate text-sm text-muted-foreground">{user.email}</p>
+            </div>
+          </div>
+          <div class="grid gap-2">
+            <h2 id="providers-heading" class="text-sm font-medium">
+              Connected Providers
+            </h2>
+            <ul aria-labelledby="providers-heading" class="flex gap-2">
+              {providers.map((provider) => (
+                <li class="rounded-md border px-2 py-0.5 text-xs font-semibold">
+                  {provider}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <DeleteUserDialog client:load />
+          </div>
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Edit Profile</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EditProfileForm client:load name={user.name} email={user.email} />
+        </CardContent>
+      </Card>
+    </div>
   </section>
 </HomeLayout>
