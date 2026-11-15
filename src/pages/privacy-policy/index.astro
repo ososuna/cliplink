@@ -28,6 +28,11 @@ const link = 'text-blue-600 dark:text-blue-500';
                 User.
               </li>
               <li>
+                The access, refresh, and ID tokens Google or GitHub hands back
+                when you sign in. They are kept in the account table only to
+                complete sign-in.
+              </li>
+              <li>
                 For every Link: its Destination, its Code, its Name if you gave
                 it one, and its Owner if you were signed in. A Link created
                 without signing in has no Owner.
@@ -59,11 +64,11 @@ const link = 'text-blue-600 dark:text-blue-500';
             <p class="text-muted-foreground">
               You can delete any Link you own. You can also delete your User:
               this removes your name, email address, avatar, sign-in links to
-              Google and GitHub, and sessions, and every Link you own becomes a
-              Deleted Link. A Deleted Link no longer leads anywhere, but its
-              Code stays reserved so it is never given to anyone else. Links
-              created without signing in have no Owner, so they can't be deleted
-              this way.
+              Google and GitHub with their tokens, and sessions, and every Link
+              you own becomes a Deleted Link. A Deleted Link no longer leads
+              anywhere, but its Code stays reserved so it is never given to
+              anyone else. Links created without signing in have no Owner, so
+              they can't be deleted this way.
             </p>
             <h2 class="text-2xl font-semibold">6. Google and GitHub</h2>
             <p class="text-muted-foreground">
