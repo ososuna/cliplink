@@ -22,3 +22,20 @@ test('an unknown path shows the 404 page with a 404 status', async ({
     '/',
   );
 });
+
+for (const path of ['/privacy-policy', '/terms-of-service']) {
+  test(`${path} names the services Cliplink uses and never mentions passwords or email sending`, async ({
+    page,
+  }) => {
+    const response = await page.goto(path);
+
+    expect(response?.status()).toBe(200);
+    const text = await page.locator('body').innerText();
+    expect(text).toMatch(/Vercel Analytics/);
+    expect(text).toMatch(/Speed Insights/);
+    expect(text).not.toMatch(/password/i);
+    expect(text).not.toMatch(/reset/i);
+    expect(text).not.toMatch(/(send|sending|sent)\b[^.]*\bemails?\b/i);
+    expect(text).not.toMatch(/\bemails?\b[^.]*\b(send|sending|sent)\b/i);
+  });
+}

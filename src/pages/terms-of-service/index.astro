@@ -1,7 +1,9 @@
 ---
+import HomeLayout from '@/components/layout/HomeLayout.astro';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import HomeLayout from '@/components/layout/HomeLayout.astro';
+
+const link = 'text-blue-600 dark:text-blue-500';
 ---
 
 <HomeLayout>
@@ -14,67 +16,76 @@ import HomeLayout from '@/components/layout/HomeLayout.astro';
         <ScrollArea client:load className="h-[calc(100vh-16rem)] pr-4">
           <section class="space-y-6">
             <p class="text-muted-foreground">
-              By using ClipLink, you agree to the following terms:
+              By using Cliplink, you agree to these terms.
             </p>
-            <h2 class="text-2xl font-semibold">1. Service Purpose</h2>
+            <h2 class="text-2xl font-semibold">1. The service</h2>
             <p class="text-muted-foreground">
-              ClipLink provides a URL shortening service. It is offered "as-is"
-              without warranties or guarantees.
+              Cliplink turns long URLs into short Links. It is free and offered
+              as is, with no warranty and no promise that it stays up.
             </p>
-            <h2 class="text-2xl font-semibold">2. User Responsibility</h2>
+            <h2 class="text-2xl font-semibold">2. Your Links</h2>
             <p class="text-muted-foreground">
-              Users are responsible for the URLs they generate and share.
-              ClipLink is not liable for any misuse, harm, or damage caused by
-              shortened URLs.
+              You are responsible for the Links you create and where they send
+              people. Don't use Cliplink for anything illegal, for malware or
+              phishing, or to hide where a Link goes in order to mislead.
+              Cliplink is not liable for harm caused by a Link's Destination.
             </p>
-            <h2 class="text-2xl font-semibold">3. Authentication Providers</h2>
             <p class="text-muted-foreground">
-              By signing in with Google or GitHub, you agree to abide by their
-              terms of service:
+              A Destination can't be changed once the Link is created. Links
+              created without signing in have no Owner, so nobody can rename or
+              delete them. A Code is never reused, even after its Link is
+              deleted.
+            </p>
+            <h2 class="text-2xl font-semibold">3. Signing in</h2>
+            <p class="text-muted-foreground">
+              You sign in with Google or GitHub, under their own terms:
             </p>
             <ul class="list-disc list-inside text-muted-foreground">
               <li>
                 <a
-                  class="text-blue-600 dark:text-blue-500"
-                  href="https://policies.google.com/privacy"
+                  class={link}
+                  href="https://policies.google.com/terms"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Google Privacy Policy
+                  Google Terms of Service
                 </a>
               </li>
               <li>
                 <a
-                  class="text-blue-600 dark:text-blue-500"
-                  href="https://docs.github.com/en/github/site-policy/github-privacy-statement"
+                  class={link}
+                  href="https://docs.github.com/en/site-policy/github-terms/github-terms-of-service"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  GitHub Privacy Statement
+                  GitHub Terms of Service
                 </a>
               </li>
             </ul>
-            <h2 class="text-2xl font-semibold">4. Termination</h2>
             <p class="text-muted-foreground">
-              We reserve the right to terminate or limit access to the service
-              if misuse is detected.
+              The Privacy Policy explains what Cliplink stores, including Vercel
+              Analytics and Vercel Speed Insights.
             </p>
-            <h2 class="text-2xl font-semibold">5. Contact Us</h2>
+            <h2 class="text-2xl font-semibold">4. Limits and removal</h2>
             <p class="text-muted-foreground">
-              If you have any questions about this Terms of Service, please
-              contact us at{' '}
-              <a
-                class="text-blue-600 dark:text-blue-500"
-                href="mailto:oswaldo.adrian35@gmail.com"
-              >
+              Requests are rate limited by IP address. Cliplink may delete any
+              Link or block access to the service if it is misused.
+            </p>
+            <h2 class="text-2xl font-semibold">5. Changes</h2>
+            <p class="text-muted-foreground">
+              These terms may change. Using Cliplink after a change means you
+              accept the new version.
+            </p>
+            <h2 class="text-2xl font-semibold">6. Contact</h2>
+            <p class="text-muted-foreground">
+              Questions about these terms go to{' '}
+              <a class={link} href="mailto:oswaldo.adrian35@gmail.com">
                 oswaldo.adrian35@gmail.com
               </a>
               .
             </p>
             <p class="text-sm text-muted-foreground mt-8">
-              These terms may be updated without prior notice. Continued use of
-              the service indicates acceptance of the latest version. <br />
-              Last Updated: December 2024
+              Last updated: November 2026
             </p>
           </section>
         </ScrollArea>
