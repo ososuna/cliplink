@@ -31,7 +31,7 @@ test('an Owner creates Links, finds them, and copies one', async ({
   const run = randomUUID();
   await page.goto('/dashboard');
   await expect(
-    page.getByText("You haven't shortened any URLs yet"),
+    page.getByText("You haven't created any Links yet"),
   ).toBeVisible();
 
   await shorten(page, {
@@ -53,7 +53,7 @@ test('an Owner creates Links, finds them, and copies one', async ({
     'Docs',
   ]);
 
-  const search = page.getByPlaceholder('Search URLs...');
+  const search = page.getByPlaceholder('Search Links...');
   await search.fill('DOCS (2');
   await expect(linkCards(page).getByRole('heading')).toHaveText(['Docs (2)']);
 
@@ -70,7 +70,7 @@ test('an Owner creates Links, finds them, and copies one', async ({
   );
 
   await search.fill('nothing like this');
-  await expect(page.getByText('No URLs found matching')).toBeVisible();
+  await expect(page.getByText('No Links found matching')).toBeVisible();
 });
 
 test("an Owner never sees another User's Links", async ({ page, context }) => {
@@ -86,7 +86,7 @@ test("an Owner never sees another User's Links", async ({ page, context }) => {
   await page.goto('/dashboard');
 
   await expect(
-    page.getByText("You haven't shortened any URLs yet"),
+    page.getByText("You haven't created any Links yet"),
   ).toBeVisible();
   await expect(page.getByText('Not yours')).toBeHidden();
 });
@@ -146,7 +146,7 @@ test('an Owner renames and deletes a Link, and its Code then shows the 404 page'
   const card = linkCards(page).filter({ hasText: `/renamed/${run}` });
 
   await card.getByRole('button', { name: 'Rename' }).click();
-  const rename = page.getByRole('dialog', { name: 'Rename URL' });
+  const rename = page.getByRole('dialog', { name: 'Rename Link' });
   // A Destination is fixed at creation, so the dialog only offers the Name.
   await expect(rename.getByRole('textbox')).toHaveCount(1);
   await expect(rename.getByLabel('Name')).toHaveValue('Draft');
@@ -158,9 +158,9 @@ test('an Owner renames and deletes a Link, and its Code then shows the 404 page'
 
   await card.getByRole('button', { name: 'Delete' }).click();
   const confirm = page.getByRole('dialog', {
-    name: 'Are you sure you want to delete this short URL?',
+    name: 'Are you sure you want to delete this Link?',
   });
-  await confirm.getByRole('button', { name: 'Delete URL' }).click();
+  await confirm.getByRole('button', { name: 'Delete Link' }).click();
   await expect(confirm).toBeHidden();
   await expect(card).toHaveCount(0);
   await expect(linkCards(page).getByRole('heading')).toHaveText(['Docs']);

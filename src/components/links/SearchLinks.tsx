@@ -17,8 +17,8 @@ export default function SearchLinks({ search: initial }: { search: string }) {
   return (
     <Input
       type="search"
-      aria-label="Search URLs"
-      placeholder="Search URLs..."
+      aria-label="Search Links"
+      placeholder="Search Links..."
       autoComplete="off"
       value={search}
       onChange={onChange}

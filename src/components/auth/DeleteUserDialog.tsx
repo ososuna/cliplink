@@ -14,11 +14,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 
-const confirmation = 'Delete my account';
+const confirmation = 'Delete my User';
 
 // Better Auth only deletes a User whose session is recent (a day, by default).
 const staleSessionMessage =
-  'For your security, log out and sign in again before deleting your account.';
+  'For your security, log out and sign in again before deleting your User.';
 
 export default function DeleteUserDialog() {
   const [open, setOpen] = useState(false);
@@ -61,15 +61,15 @@ export default function DeleteUserDialog() {
           variant="outline"
           className="border-destructive text-destructive"
         >
-          <Trash /> Delete Account
+          <Trash /> Delete User
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Are you absolutely sure?</DialogTitle>
           <DialogDescription>
-            This deletes your account and every URL you shortened. Their short
-            URLs stop working. This action cannot be undone.
+            This deletes your User and every Link you own. Those Links stop
+            working. This action cannot be undone.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onConfirm} noValidate className="grid gap-4">
@@ -98,7 +98,7 @@ export default function DeleteUserDialog() {
               disabled={!confirmed}
               className="w-full"
             >
-              Delete Account
+              Delete User
             </PendingButton>
           </DialogFooter>
         </form>

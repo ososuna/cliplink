@@ -50,9 +50,7 @@ export default function DeleteLinkDialog({ linkId }: { linkId: string }) {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>
-            Are you sure you want to delete this short URL?
-          </DialogTitle>
+          <DialogTitle>Are you sure you want to delete this Link?</DialogTitle>
           <DialogDescription>This action cannot be undone.</DialogDescription>
         </DialogHeader>
         {failure && (
@@ -69,7 +67,7 @@ export default function DeleteLinkDialog({ linkId }: { linkId: string }) {
             className="w-full"
             onClick={onConfirm}
           >
-            Delete URL
+            Delete Link
           </PendingButton>
         </DialogFooter>
       </DialogContent>

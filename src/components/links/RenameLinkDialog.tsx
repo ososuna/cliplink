@@ -74,7 +74,7 @@ export default function RenameLinkDialog({
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Rename URL</DialogTitle>
+          <DialogTitle>Rename Link</DialogTitle>
           <DialogDescription>
             Enter a new name, or leave it blank to remove the name.
           </DialogDescription>

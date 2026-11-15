@@ -50,19 +50,17 @@ test('a User renames their User, then deletes it, and their Links show the 404 p
   await expect(page.getByLabel('Name')).toHaveValue('Ada King');
 
   const sessionCookies = await context.cookies();
-  await page.getByRole('button', { name: 'Delete Account' }).click();
+  await page.getByRole('button', { name: 'Delete User' }).click();
   const confirm = page.getByRole('dialog', {
     name: 'Are you absolutely sure?',
   });
-  const deleteButton = confirm.getByRole('button', { name: 'Delete Account' });
+  const deleteButton = confirm.getByRole('button', { name: 'Delete User' });
+  await expect(deleteButton).toBeDisabled();
+  await confirm.getByLabel('Type "Delete my User" to confirm').fill('delete');
   await expect(deleteButton).toBeDisabled();
   await confirm
-    .getByLabel('Type "Delete my account" to confirm')
-    .fill('delete');
-  await expect(deleteButton).toBeDisabled();
-  await confirm
-    .getByLabel('Type "Delete my account" to confirm')
-    .fill('Delete my account');
+    .getByLabel('Type "Delete my User" to confirm')
+    .fill('Delete my User');
   await deleteButton.click();
 
   await expect(page).toHaveURL('/');
