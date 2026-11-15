@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, isNull, like, or } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, isNull, like, ne, or } from 'drizzle-orm';
 import type { Db } from '@/db';
 import { randomCode } from '@/links/code';
 import { parseDestination } from '@/links/destination';
@@ -55,9 +55,16 @@ function normalizeName(name: string | undefined): string | null {
 export function createLinks(deps: { db: Db; generateCode?: () => string }) {
   const { db, generateCode = randomCode } = deps;
 
-  /** The Name itself, or the first free "Name (n)" among the Owner's Links that aren't deleted. */
-  async function uniqueName(opts: { ownerId: string; name: string }) {
-    const { ownerId, name } = opts;
+  /**
+   * The Name itself, or the first free "Name (n)" among the Owner's Links that aren't deleted.
+   * A Link being renamed doesn't count, so it can keep its own Name.
+   */
+  async function uniqueName(opts: {
+    ownerId: string;
+    name: string;
+    renaming?: string;
+  }) {
+    const { ownerId, name, renaming } = opts;
     const taken = await db
       .select({ name: link.name })
       .from(link)
@@ -65,6 +72,7 @@ export function createLinks(deps: { db: Db; generateCode?: () => string }) {
         and(
           eq(link.ownerId, ownerId),
           isNull(link.deletedAt),
+          renaming ? ne(link.id, renaming) : undefined,
           or(eq(link.name, name), like(link.name, `${escapeLike(name)} (%)`)),
         ),
       );
@@ -138,6 +146,32 @@ export function createLinks(deps: { db: Db; generateCode?: () => string }) {
         total,
         totalPages: Math.ceil(total / limit),
       };
+    },
+
+    async renameLink(opts: {
+      ownerId: string;
+      linkId: string;
+      name: string;
+    }): Promise<Link> {
+      const { ownerId, linkId } = opts;
+      assertLinkId(linkId);
+      const baseName = normalizeName(opts.name);
+      const name = baseName
+        ? await uniqueName({ ownerId, name: baseName, renaming: linkId })
+        : null;
+      const [renamed] = await db
+        .update(link)
+        .set({ name })
+        .where(
+          and(
+            eq(link.id, linkId),
+            eq(link.ownerId, ownerId),
+            isNull(link.deletedAt),
+          ),
+        )
+        .returning();
+      if (!renamed) throw new LinkNotFoundError();
+      return renamed;
     },
 
     async deleteLink(opts: { ownerId: string; linkId: string }) {

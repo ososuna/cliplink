@@ -421,3 +421,158 @@ describe('deleteLink', () => {
     await expect(links.findDestination('Reused1')).resolves.toBeNull();
   });
 });
+
+describe('renameLink', () => {
+  it('gives the Link its new Name and keeps its Destination', async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const link = await links.createLink({
+      destination: 'https://example.com/fixed',
+      name: 'Old',
+      ownerId: owner,
+    });
+
+    const renamed = await links.renameLink({
+      ownerId: owner,
+      linkId: link.id,
+      name: '  New  ',
+    });
+
+    expect(renamed).toMatchObject({
+      code: link.code,
+      name: 'New',
+      destination: 'https://example.com/fixed',
+    });
+    await expect(links.findDestination(link.code)).resolves.toBe(
+      'https://example.com/fixed',
+    );
+  });
+
+  it("adds a numbered suffix when another of the Owner's Links has that Name", async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const create = (name: string) =>
+      links.createLink({
+        destination: 'https://example.com/docs',
+        name,
+        ownerId: owner,
+      });
+    await create('Docs');
+    await create('Docs (2)');
+    const notes = await create('Notes');
+
+    const renamed = await links.renameLink({
+      ownerId: owner,
+      linkId: notes.id,
+      name: 'Docs',
+    });
+
+    expect(renamed.name).toBe('Docs (3)');
+  });
+
+  it('keeps the Name when it is renamed to its own Name', async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const create = () =>
+      links.createLink({
+        destination: 'https://example.com/docs',
+        name: 'Docs',
+        ownerId: owner,
+      });
+    await create();
+    const second = await create();
+
+    const renamed = await links.renameLink({
+      ownerId: owner,
+      linkId: second.id,
+      name: 'Docs (2)',
+    });
+
+    expect(renamed.name).toBe('Docs (2)');
+  });
+
+  it('reuses the Name of a Deleted Link', async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const deleted = await links.createLink({
+      destination: 'https://example.com/old',
+      name: 'Docs',
+      ownerId: owner,
+    });
+    await links.deleteLink({ ownerId: owner, linkId: deleted.id });
+    const link = await links.createLink({
+      destination: 'https://example.com/new',
+      ownerId: owner,
+    });
+
+    const renamed = await links.renameLink({
+      ownerId: owner,
+      linkId: link.id,
+      name: 'Docs',
+    });
+
+    expect(renamed.name).toBe('Docs');
+  });
+
+  it('leaves the Link unnamed when the Name is blank', async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const link = await links.createLink({
+      destination: 'https://example.com/named',
+      name: 'Named',
+      ownerId: owner,
+    });
+
+    const renamed = await links.renameLink({
+      ownerId: owner,
+      linkId: link.id,
+      name: '   ',
+    });
+
+    expect(renamed.name).toBeNull();
+  });
+
+  // Regression: the old API let any signed-in User rename anyone's Link.
+  it("refuses another Owner's Link the same way as a missing one", async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const intruder = await createOwner();
+    const link = await links.createLink({
+      destination: 'https://example.com/not-yours',
+      name: 'Mine',
+      ownerId: owner,
+    });
+
+    await expect(
+      links.renameLink({ ownerId: intruder, linkId: link.id, name: 'Taken' }),
+    ).rejects.toThrow(LinkNotFoundError);
+    await expect(
+      links.renameLink({
+        ownerId: intruder,
+        linkId: randomUUID(),
+        name: 'Taken',
+      }),
+    ).rejects.toThrow(LinkNotFoundError);
+    const listed = await links.listLinks(owner, { page: 1, limit: 10 });
+    expect(listed.items.map((item) => item.name)).toEqual(['Mine']);
+  });
+
+  it('cannot rename an Anonymous Link, a Deleted Link, or a malformed id', async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const anonymous = await links.createLink({
+      destination: 'https://example.com/anonymous',
+    });
+    const deleted = await links.createLink({
+      destination: 'https://example.com/deleted',
+      ownerId: owner,
+    });
+    await links.deleteLink({ ownerId: owner, linkId: deleted.id });
+
+    for (const linkId of [anonymous.id, deleted.id, 'not-a-uuid']) {
+      await expect(
+        links.renameLink({ ownerId: owner, linkId, name: 'New' }),
+      ).rejects.toThrow(LinkNotFoundError);
+    }
+  });
+});
