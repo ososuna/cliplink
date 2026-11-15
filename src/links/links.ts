@@ -19,6 +19,9 @@ export type LinkPage = {
 // With 62^7 Codes, even one collision is rare. Several in a row means the generator is broken.
 const codeAttempts = 5;
 
+// Each retry only happens when another write took the Name in between, so a few is plenty.
+const nameAttempts = 5;
+
 export class CodeGenerationError extends Error {
   constructor() {
     super('Could not create a Link right now. Please try again.');
@@ -45,6 +48,13 @@ function assertLinkId(linkId: string) {
 /** Makes `text` match only itself inside a LIKE pattern. */
 function escapeLike(text: string): string {
   return text.replace(/[\\%_]/g, (special) => `\\${special}`);
+}
+
+/** Another write took the Name between `uniqueName` and this one. Drizzle wraps the driver's error. */
+function isNameTaken(error: unknown): boolean {
+  const { code, constraint } = ((error as { cause?: unknown })?.cause ??
+    error) as { code?: string; constraint?: string };
+  return code === '23505' && constraint === 'link_owner_name_unique';
 }
 
 function normalizeName(name: string | undefined): string | null {
@@ -82,6 +92,15 @@ export function createLinks(deps: { db: Db; generateCode?: () => string }) {
       candidate = `${name} (${counter})`;
     }
     return candidate;
+  }
+
+  /** Only the Owner's Links that aren't deleted can change. */
+  function ownedLiveLink(opts: { ownerId: string; linkId: string }) {
+    return and(
+      eq(link.id, opts.linkId),
+      eq(link.ownerId, opts.ownerId),
+      isNull(link.deletedAt),
+    );
   }
 
   return {
@@ -156,22 +175,23 @@ export function createLinks(deps: { db: Db; generateCode?: () => string }) {
       const { ownerId, linkId } = opts;
       assertLinkId(linkId);
       const baseName = normalizeName(opts.name);
-      const name = baseName
-        ? await uniqueName({ ownerId, name: baseName, renaming: linkId })
-        : null;
-      const [renamed] = await db
-        .update(link)
-        .set({ name })
-        .where(
-          and(
-            eq(link.id, linkId),
-            eq(link.ownerId, ownerId),
-            isNull(link.deletedAt),
-          ),
-        )
-        .returning();
-      if (!renamed) throw new LinkNotFoundError();
-      return renamed;
+      for (let attempt = 1; ; attempt++) {
+        const name = baseName
+          ? await uniqueName({ ownerId, name: baseName, renaming: linkId })
+          : null;
+        try {
+          const [renamed] = await db
+            .update(link)
+            .set({ name })
+            .where(ownedLiveLink({ ownerId, linkId }))
+            .returning();
+          if (!renamed) throw new LinkNotFoundError();
+          return renamed;
+        } catch (error) {
+          // A concurrent rename or create took the Name, so pick the next free one.
+          if (!isNameTaken(error) || attempt === nameAttempts) throw error;
+        }
+      }
     },
 
     async deleteLink(opts: { ownerId: string; linkId: string }) {
@@ -181,13 +201,7 @@ export function createLinks(deps: { db: Db; generateCode?: () => string }) {
       const [deleted] = await db
         .update(link)
         .set({ deletedAt: new Date() })
-        .where(
-          and(
-            eq(link.id, linkId),
-            eq(link.ownerId, ownerId),
-            isNull(link.deletedAt),
-          ),
-        )
+        .where(ownedLiveLink({ ownerId, linkId }))
         .returning({ id: link.id });
       if (!deleted) throw new LinkNotFoundError();
     },
