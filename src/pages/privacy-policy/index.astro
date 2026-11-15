@@ -2,6 +2,8 @@
 import HomeLayout from '@/components/layout/HomeLayout.astro';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+
+const link = 'text-blue-600 dark:text-blue-500';
 ---
 
 <HomeLayout>
@@ -14,40 +16,64 @@ import { ScrollArea } from '@/components/ui/scroll-area';
         <ScrollArea client:load className="h-[calc(100vh-16rem)] pr-4">
           <section class="space-y-6">
             <p class="text-muted-foreground">
-              ClipLink takes your privacy seriously. This document outlines how
-              we handle your information:
+              Cliplink is a URL shortener run by Oswaldo Osuna. This page lists
+              what Cliplink stores, why, and where.
             </p>
-            <h2 class="text-2xl font-semibold">1. Data Collection</h2>
-            <p class="text-muted-foreground">
-              We only collect the minimum information necessary for
-              authentication purposes. This includes:
-            </p>
+            <h2 class="text-2xl font-semibold">1. What Cliplink stores</h2>
             <ul class="list-disc list-inside text-muted-foreground">
-              <li>Your name, last name and email address</li>
-              <li>The URLs you shorten</li>
-              <li>Usage data and analytics</li>
               <li>
-                Basic profile information provided by your chosen authentication
-                provider (Google or GitHub).
+                If you sign in: your name, email address, and avatar, as shared
+                by Google or GitHub, and which of the two you signed in with.
+                Signing in with both using the same verified email gives you one
+                User.
+              </li>
+              <li>
+                For every Link: its Destination, its Code, its Name if you gave
+                it one, and its Owner if you were signed in. A Link created
+                without signing in has no Owner.
+              </li>
+              <li>
+                Sessions: a record in the database and a cookie in your browser
+                that keep you signed in until you sign out or the session
+                expires.
               </li>
             </ul>
-            <h2 class="text-2xl font-semibold">2. Data Usage</h2>
+            <h2 class="text-2xl font-semibold">2. Analytics</h2>
             <p class="text-muted-foreground">
-              The collected data is used solely to provide secure login
-              functionality. We do not sell, share, or distribute your
-              information to third parties.
+              Cliplink uses Vercel Analytics to count page views and Vercel
+              Speed Insights to measure how fast pages load. These are reported
+              in aggregate and are not tied to your User.
             </p>
-            <h2 class="text-2xl font-semibold">
-              3. Third-Party Authentication Providers
-            </h2>
+            <h2 class="text-2xl font-semibold">3. Rate limiting</h2>
             <p class="text-muted-foreground">
-              We rely on Google and GitHub for user authentication. By using
-              these services, you agree to their respective privacy policies:
+              Vercel's firewall limits how many requests one IP address can
+              make, to stop abuse. Cliplink itself does not store your IP
+              address.
+            </p>
+            <h2 class="text-2xl font-semibold">4. Where it lives</h2>
+            <p class="text-muted-foreground">
+              Cliplink runs on Vercel and keeps its data in a Postgres database
+              on Neon. Your data is not sold or shared with anyone else.
+            </p>
+            <h2 class="text-2xl font-semibold">5. Deleting your data</h2>
+            <p class="text-muted-foreground">
+              You can delete any Link you own. You can also delete your User:
+              this removes your name, email address, avatar, sign-in links to
+              Google and GitHub, and sessions, and every Link you own becomes a
+              Deleted Link. A Deleted Link no longer leads anywhere, but its
+              Code stays reserved so it is never given to anyone else. Links
+              created without signing in have no Owner, so they can't be deleted
+              this way.
+            </p>
+            <h2 class="text-2xl font-semibold">6. Google and GitHub</h2>
+            <p class="text-muted-foreground">
+              When you sign in, Google or GitHub handles your sign-in under its
+              own privacy policy:
             </p>
             <ul class="list-disc list-inside text-muted-foreground">
               <li>
                 <a
-                  class="text-blue-600 dark:text-blue-500"
+                  class={link}
                   href="https://policies.google.com/privacy"
                   target="_blank"
                   rel="noopener noreferrer"
@@ -57,34 +83,25 @@ import { ScrollArea } from '@/components/ui/scroll-area';
               </li>
               <li>
                 <a
-                  class="text-blue-600 dark:text-blue-500"
-                  href="https://docs.github.com/en/github/site-policy/github-privacy-statement"
+                  class={link}
+                  href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  GitHub Privacy Statement
+                  GitHub General Privacy Statement
                 </a>
               </li>
             </ul>
-            <h2 class="text-2xl font-semibold">4. Storage</h2>
+            <h2 class="text-2xl font-semibold">7. Contact</h2>
             <p class="text-muted-foreground">
-              Any data collected is stored securely on our servers and is not
-              used beyond its intended purpose.
-            </p>
-            <h2 class="text-2xl font-semibold">5. Contact Us</h2>
-            <p class="text-muted-foreground">
-              If you have any questions about this Privacy Policy, please
-              contact us at{' '}
-              <a
-                class="text-blue-600 dark:text-blue-500"
-                href="mailto:oswaldo.adrian35@gmail.com"
-              >
+              Questions about this policy go to{' '}
+              <a class={link} href="mailto:oswaldo.adrian35@gmail.com">
                 oswaldo.adrian35@gmail.com
               </a>
               .
             </p>
             <p class="text-sm text-muted-foreground mt-8">
-              Last Updated: December 2024
+              Last updated: November 2026
             </p>
           </section>
         </ScrollArea>
