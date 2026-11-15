@@ -44,6 +44,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      devalue:
+        specifier: ^6.0.3
+        version: 6.0.3
       drizzle-orm:
         specifier: ^0.45.4
         version: 0.45.4(@electric-sql/pglite@0.5.16)(@neondatabase/serverless@1.2.1)(@types/pg@8.23.1)(kysely@0.29.9)(pg@8.23.1)

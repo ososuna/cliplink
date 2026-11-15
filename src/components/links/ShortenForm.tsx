@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { actions, isInputError } from 'astro:actions';
+import { isInputError } from 'astro:actions';
 import { navigate } from 'astro:transitions/client';
 import { z } from 'astro/zod';
 import { useForm } from 'react-hook-form';
@@ -10,6 +10,7 @@ import {
   PendingButton,
 } from '@/components/form';
 import { CardContent, CardFooter } from '@/components/ui/card';
+import { createLink } from '@/components/links/create-link';
 import { Input } from '@/components/ui/input';
 // Not '@/links': that would pull the database code into the browser bundle.
 import { destinationSchema } from '@/links/destination';
@@ -28,7 +29,7 @@ export default function ShortenForm() {
   });
 
   const onSubmit = handleSubmit(async (input) => {
-    const { data, error } = await actions.links.create(input);
+    const { data, error } = await createLink(input);
     if (data) return navigate(`/short/${data.code}`);
     const message = isInputError(error)
       ? error.fields.destination?.[0]

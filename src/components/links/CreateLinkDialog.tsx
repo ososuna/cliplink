@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { actions, isInputError } from 'astro:actions';
+import { isInputError } from 'astro:actions';
 import { navigate } from 'astro:transitions/client';
 import { z } from 'astro/zod';
 import { useState } from 'react';
@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { createLink } from '@/components/links/create-link';
 import { Input } from '@/components/ui/input';
 // Not '@/links': that would pull the database code into the browser bundle.
 import { destinationSchema } from '@/links/destination';
@@ -44,7 +45,7 @@ export default function CreateLinkDialog() {
   });
 
   const onSubmit = handleSubmit(async (input) => {
-    const { data, error } = await actions.links.create(input);
+    const { data, error } = await createLink(input);
     if (data) {
       setOpen(false);
       reset();
