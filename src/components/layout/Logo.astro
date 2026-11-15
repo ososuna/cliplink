@@ -1,0 +1,14 @@
+---
+import ClipLinkIcon from '@/icons/ClipLinkIcon.astro';
+
+interface Props {
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+---
+
+<a href="/">
+  <ClipLinkIcon class={`mb-1 inline ${className}`} />
+  ClipLink
+</a>
