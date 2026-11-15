@@ -30,6 +30,17 @@ To sign in locally, fill in `BETTER_AUTH_SECRET` and the development Google and 
 
 A pre-commit hook lints and formats staged files.
 
+## Deploy
+
+Vercel deploys `main` to cliplink.app and every PR to a preview with its own Neon database branch. Each build migrates its database first (`vercel.json`).
+
+Production setup, the cutover from the old app, and rollback are walked through by a wizard. Run it from the repo root:
+
+```sh
+scripts/cutover.sh            # OAuth apps, Vercel, Neon, firewall rule, cutover, smoke check
+scripts/cutover.sh rollback   # back to the previous production deployment
+```
+
 ## Docs
 
 - `GLOSSARY.md`: the words Cliplink uses for its domain.
