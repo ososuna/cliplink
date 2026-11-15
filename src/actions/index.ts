@@ -5,15 +5,21 @@ import {
   CodeGenerationError,
   destinationSchema,
   InvalidDestinationError,
+  nameSchema,
 } from '@/links';
 
 export const server = {
   links: {
     create: defineAction({
-      input: z.object({ destination: destinationSchema }),
-      handler: async ({ destination }) => {
+      input: z.object({ destination: destinationSchema, name: nameSchema }),
+      handler: async ({ destination, name }, context) => {
         try {
-          const link = await links.createLink({ destination });
+          // Signed in, the User becomes the Owner. Otherwise this is an Anonymous Link.
+          const link = await links.createLink({
+            destination,
+            name,
+            ownerId: context.locals.user?.id,
+          });
           return { code: link.code };
         } catch (error) {
           if (error instanceof InvalidDestinationError) {

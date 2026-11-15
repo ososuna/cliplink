@@ -10,3 +10,4 @@ export {
   type LinkPage,
   type Links,
 } from '@/links/links';
+export { nameMaxLength, nameSchema } from '@/links/name';
