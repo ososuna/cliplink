@@ -3,6 +3,7 @@ import { authClient } from '@/auth/client';
 import { Button } from '@/components/ui/button';
 import GitHubIcon from '@/icons/GitHubIcon';
 import GoogleIcon from '@/icons/GoogleIcon';
+import { dashboardPath, signInPath } from '@/paths';
 
 type ProviderId = 'github' | 'google';
 
@@ -22,11 +23,11 @@ const SignInButtons = () => {
     setPending(provider);
     const { error } = await authClient.signIn.social({
       provider,
-      callbackURL: '/dashboard',
-      errorCallbackURL: '/auth/login',
+      callbackURL: dashboardPath,
+      errorCallbackURL: signInPath,
     });
     if (error) {
-      window.location.assign('/auth/login?error=sign_in_failed');
+      window.location.assign(`${signInPath}?error=sign_in_failed`);
     }
   };
 

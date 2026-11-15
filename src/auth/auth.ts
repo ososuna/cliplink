@@ -3,8 +3,7 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import * as authSchema from '@/auth/schema';
 import type { Db } from '@/db';
 import type { Links } from '@/links';
-
-export const signInPath = '/auth/login';
+import { signInPath } from '@/paths';
 
 type OAuthApp = { clientId: string; clientSecret: string };
 
