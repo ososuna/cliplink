@@ -1,0 +1,58 @@
+---
+import { ExternalLink } from 'lucide-react';
+import CopyButton from '@/components/links/CopyButton';
+import DeleteLinkDialog from '@/components/links/DeleteLinkDialog';
+import RenameLinkDialog from '@/components/links/RenameLinkDialog';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+} from '@/components/ui/card';
+import { linkPath, linkUrl, type Link } from '@/links';
+
+interface Props {
+  link: Link;
+}
+
+const { link } = Astro.props;
+const shortUrl = linkUrl({ code: link.code, origin: Astro.url.origin });
+const path = linkPath(link.code);
+---
+
+<article>
+  <Card className="h-full">
+    <CardHeader>
+      <div class="flex items-center gap-2">
+        <h2
+          class="flex-1 truncate text-lg leading-none font-semibold"
+          title={link.name ?? path}
+        >
+          {link.name ?? path}
+        </h2>
+        {link.name && (
+          <span class="shrink-0 text-sm text-muted-foreground">{path}</span>
+        )}
+      </div>
+      <CardDescription className="truncate" title={link.destination}>
+        {link.destination}
+      </CardDescription>
+    </CardHeader>
+    <CardFooter className="mt-auto flex gap-2">
+      <CopyButton client:load url={shortUrl} />
+      <Button asChild variant="outline" size="icon">
+        <a
+          href={link.destination}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Navigate"
+        >
+          <ExternalLink />
+        </a>
+      </Button>
+      <RenameLinkDialog client:load linkId={link.id} name={link.name} />
+      <DeleteLinkDialog client:load linkId={link.id} />
+    </CardFooter>
+  </Card>
+</article>

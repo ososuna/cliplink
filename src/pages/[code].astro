@@ -1,0 +1,13 @@
+---
+import { links } from '@/app';
+
+// Static routes take precedence over this one, so app pages always win over Codes.
+// An empty 404 from a page (not an endpoint) makes Astro render the 404 page.
+const destination = await links.findDestination(Astro.params.code ?? '');
+if (!destination) return new Response(null, { status: 404 });
+
+return new Response(null, {
+  status: 302,
+  headers: { Location: destination, 'Cache-Control': 'private, no-store' },
+});
+---

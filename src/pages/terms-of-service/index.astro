@@ -1,0 +1,95 @@
+---
+import HomeLayout from '@/components/layout/HomeLayout.astro';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+const link = 'text-blue-600 dark:text-blue-500';
+---
+
+<HomeLayout>
+  <div class="flex-grow container mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle className="text-3xl font-bold">Terms of Service</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea client:load className="h-[calc(100vh-16rem)] pr-4">
+          <section class="space-y-6">
+            <p class="text-muted-foreground">
+              By using Cliplink, you agree to these terms.
+            </p>
+            <h2 class="text-2xl font-semibold">1. The service</h2>
+            <p class="text-muted-foreground">
+              Cliplink turns long URLs into short Links. It is free and offered
+              as is, with no warranty and no promise that it stays up.
+            </p>
+            <h2 class="text-2xl font-semibold">2. Your Links</h2>
+            <p class="text-muted-foreground">
+              You are responsible for the Links you create and where they send
+              people. Don't use Cliplink for anything illegal, for malware or
+              phishing, or to hide where a Link goes in order to mislead.
+              Cliplink is not liable for harm caused by a Link's Destination.
+            </p>
+            <p class="text-muted-foreground">
+              A Destination can't be changed once the Link is created. Links
+              created without signing in have no Owner, so nobody can rename or
+              delete them. A Code is never reused, even after its Link is
+              deleted.
+            </p>
+            <h2 class="text-2xl font-semibold">3. Signing in</h2>
+            <p class="text-muted-foreground">
+              You sign in with Google or GitHub, under their own terms:
+            </p>
+            <ul class="list-disc list-inside text-muted-foreground">
+              <li>
+                <a
+                  class={link}
+                  href="https://policies.google.com/terms"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Google Terms of Service
+                </a>
+              </li>
+              <li>
+                <a
+                  class={link}
+                  href="https://docs.github.com/en/site-policy/github-terms/github-terms-of-service"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  GitHub Terms of Service
+                </a>
+              </li>
+            </ul>
+            <p class="text-muted-foreground">
+              The Privacy Policy explains what Cliplink stores, including Vercel
+              Analytics and Vercel Speed Insights.
+            </p>
+            <h2 class="text-2xl font-semibold">4. Limits and removal</h2>
+            <p class="text-muted-foreground">
+              Requests are rate limited by IP address. Cliplink may delete any
+              Link or block access to the service if it is misused.
+            </p>
+            <h2 class="text-2xl font-semibold">5. Changes</h2>
+            <p class="text-muted-foreground">
+              These terms may change. Using Cliplink after a change means you
+              accept the new version.
+            </p>
+            <h2 class="text-2xl font-semibold">6. Contact</h2>
+            <p class="text-muted-foreground">
+              Questions about these terms go to{' '}
+              <a class={link} href="mailto:oswaldo.adrian35@gmail.com">
+                oswaldo.adrian35@gmail.com
+              </a>
+              .
+            </p>
+            <p class="text-sm text-muted-foreground mt-8">
+              Last updated: November 2026
+            </p>
+          </section>
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  </div>
+</HomeLayout>

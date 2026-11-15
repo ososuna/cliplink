@@ -1,0 +1,50 @@
+---
+import { ExternalLink } from 'lucide-react';
+import { links } from '@/app';
+import HomeLayout from '@/components/layout/HomeLayout.astro';
+import Logo from '@/components/layout/Logo.astro';
+import CopyLink from '@/components/links/CopyLink';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { linkUrl } from '@/links';
+
+const { code = '' } = Astro.params;
+if (!(await links.findDestination(code))) {
+  return new Response(null, { status: 404 });
+}
+
+const shortUrl = linkUrl({ code, origin: Astro.url.origin });
+---
+
+<HomeLayout>
+  <Card className="mx-4 w-full max-w-md">
+    <CardHeader>
+      <CardTitle className="text-2xl font-bold">
+        <Logo class="h-8 w-8" />
+      </CardTitle>
+      <CardDescription>Shortened version of your long URL</CardDescription>
+    </CardHeader>
+    <CardContent className="grid gap-2">
+      <Label htmlFor="short-url">Short URL</Label>
+      <CopyLink client:load id="short-url" url={shortUrl} />
+    </CardContent>
+    <CardFooter className="flex flex-wrap gap-4">
+      <Button asChild>
+        <a href={shortUrl} target="_blank" rel="noopener">
+          <ExternalLink /> Open Short URL
+        </a>
+      </Button>
+      <Button asChild variant="outline">
+        <a href="/">Shorten another URL</a>
+      </Button>
+    </CardFooter>
+  </Card>
+</HomeLayout>

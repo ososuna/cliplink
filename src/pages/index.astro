@@ -1,0 +1,25 @@
+---
+import HomeLayout from '@/components/layout/HomeLayout.astro';
+import Logo from '@/components/layout/Logo.astro';
+import ShortenForm from '@/components/links/ShortenForm';
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+---
+
+<HomeLayout>
+  <Card className="mx-4 w-full max-w-md">
+    <CardHeader>
+      <CardTitle className="text-2xl font-bold">
+        <Logo class="h-8 w-8" />
+      </CardTitle>
+      <CardDescription>
+        Enter a long URL to get a shortened version
+      </CardDescription>
+    </CardHeader>
+    <ShortenForm client:load />
+  </Card>
+</HomeLayout>

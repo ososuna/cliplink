@@ -1,0 +1,116 @@
+---
+import HomeLayout from '@/components/layout/HomeLayout.astro';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+const link = 'text-blue-600 dark:text-blue-500';
+---
+
+<HomeLayout>
+  <div class="flex-grow container mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <Card className="w-full max-w-4xl mx-auto">
+      <CardHeader>
+        <CardTitle className="text-3xl font-bold">Privacy Policy</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea client:load className="h-[calc(100vh-16rem)] pr-4">
+          <section class="space-y-6">
+            <p class="text-muted-foreground">
+              Cliplink is a URL shortener run by Oswaldo Osuna. This page lists
+              what Cliplink stores, why, and where.
+            </p>
+            <h2 class="text-2xl font-semibold">1. What Cliplink stores</h2>
+            <ul class="list-disc list-inside text-muted-foreground">
+              <li>
+                If you sign in: your name, email address, and avatar, as shared
+                by Google or GitHub, and which of the two you signed in with.
+                Signing in with both using the same verified email gives you one
+                User.
+              </li>
+              <li>
+                The access, refresh, and ID tokens Google or GitHub hands back
+                when you sign in. They are kept in the account table only to
+                complete sign-in.
+              </li>
+              <li>
+                For every Link: its Destination, its Code, its Name if you gave
+                it one, and its Owner if you were signed in. A Link created
+                without signing in has no Owner.
+              </li>
+              <li>
+                Sessions: a record in the database and a cookie in your browser
+                that keep you signed in until you sign out or the session
+                expires.
+              </li>
+            </ul>
+            <h2 class="text-2xl font-semibold">2. Analytics</h2>
+            <p class="text-muted-foreground">
+              Cliplink uses Vercel Analytics to count page views and Vercel
+              Speed Insights to measure how fast pages load. These are reported
+              in aggregate and are not tied to your User.
+            </p>
+            <h2 class="text-2xl font-semibold">3. Rate limiting</h2>
+            <p class="text-muted-foreground">
+              Vercel's firewall limits how many requests one IP address can
+              make, to stop abuse. Cliplink itself does not store your IP
+              address.
+            </p>
+            <h2 class="text-2xl font-semibold">4. Where it lives</h2>
+            <p class="text-muted-foreground">
+              Cliplink runs on Vercel and keeps its data in a Postgres database
+              on Neon. Your data is not sold or shared with anyone else.
+            </p>
+            <h2 class="text-2xl font-semibold">5. Deleting your data</h2>
+            <p class="text-muted-foreground">
+              You can delete any Link you own. You can also delete your User:
+              this removes your name, email address, avatar, sign-in links to
+              Google and GitHub with their tokens, and sessions, and every Link
+              you own becomes a Deleted Link. A Deleted Link no longer leads
+              anywhere, but its Code stays reserved so it is never given to
+              anyone else. Links created without signing in have no Owner, so
+              they can't be deleted this way.
+            </p>
+            <h2 class="text-2xl font-semibold">6. Google and GitHub</h2>
+            <p class="text-muted-foreground">
+              When you sign in, Google or GitHub handles your sign-in under its
+              own privacy policy:
+            </p>
+            <ul class="list-disc list-inside text-muted-foreground">
+              <li>
+                <a
+                  class={link}
+                  href="https://policies.google.com/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Google Privacy Policy
+                </a>
+              </li>
+              <li>
+                <a
+                  class={link}
+                  href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  GitHub General Privacy Statement
+                </a>
+              </li>
+            </ul>
+            <h2 class="text-2xl font-semibold">7. Contact</h2>
+            <p class="text-muted-foreground">
+              Questions about this policy go to{' '}
+              <a class={link} href="mailto:oswaldo.adrian35@gmail.com">
+                oswaldo.adrian35@gmail.com
+              </a>
+              .
+            </p>
+            <p class="text-sm text-muted-foreground mt-8">
+              Last updated: November 2026
+            </p>
+          </section>
+        </ScrollArea>
+      </CardContent>
+    </Card>
+  </div>
+</HomeLayout>
