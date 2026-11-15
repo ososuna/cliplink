@@ -1,6 +1,8 @@
+import 'dotenv/config';
 import { defineConfig, devices } from '@playwright/test';
 
-const port = 4321;
+// E2E_PORT lets parallel worktrees each run their own server.
+const port = Number(process.env.E2E_PORT ?? 4321);
 const baseURL = `http://localhost:${port}`;
 
 export default defineConfig({
@@ -11,7 +13,7 @@ export default defineConfig({
   use: { baseURL, trace: 'on-first-retry' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'pnpm build:e2e && pnpm start:e2e',
+    command: 'pnpm db:migrate && pnpm build:e2e && pnpm start:e2e',
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
