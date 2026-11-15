@@ -15,8 +15,8 @@ Run `pnpm check` (types, lint, format, Vitest) before saying you're done. Run `p
 Feature modules, not layers (ADR-0005). Each module's `index.ts` is its public interface.
 
 - `src/db`: Drizzle client (`createDb`), schema, and `createTestDb()` for Vitest. Migrations live in `drizzle/`.
-- `src/links`: every Link rule (`createLinks({ db })` gives `createLink`, `listLinks`, `renameLink`, `deleteLink`, `findDestination`) and the Link table. `src/links/destination.ts` and `src/links/name.ts` are also imported by islands, since `@/links` would bundle database code.
-- `src/auth`: Better Auth (`createAuth`), its tables, the browser `authClient`, and sign-in error messages.
+- `src/links`: every Link rule (`createLinks({ db })` gives `createLink`, `listLinks`, `renameLink`, `deleteLink`, `deleteOwnerLinks`, `findDestination`) and the Link table. `src/links/destination.ts` and `src/links/name.ts` are also imported by islands, since `@/links` would bundle database code.
+- `src/auth`: Better Auth (`createAuth`), its tables, the browser `authClient`, sign-in error messages, and the User name rule (`src/auth/name.ts`, safe for islands). Deleting a User runs `deleteOwnerLinks` first, in Better Auth's `beforeDelete`. Renaming goes through the `user.rename` Action, so Better Auth's own `/update-user` is turned off.
 - `src/app.ts`: the app's `db`, `links`, and `auth` instances, built from `astro:env`. Pages, Actions, and middleware import from here.
 - `src/middleware.ts`: puts the session on `Astro.locals` and sends Visitors on private pages to sign in.
 - `src/actions`: Astro Actions. Thin: zod input, call a module, map its errors to `ActionError`.

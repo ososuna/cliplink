@@ -16,6 +16,7 @@ export const db = createDb(DATABASE_URL);
 export const links = createLinks({ db });
 export const auth = createAuth({
   db,
+  links,
   baseURL: BETTER_AUTH_URL,
   secret: BETTER_AUTH_SECRET,
   google: { clientId: GOOGLE_CLIENT_ID, clientSecret: GOOGLE_CLIENT_SECRET },

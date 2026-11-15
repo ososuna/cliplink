@@ -4,7 +4,8 @@ import {
   type ActionAPIContext,
 } from 'astro:actions';
 import { z } from 'astro/zod';
-import { links } from '@/app';
+import { auth, links } from '@/app';
+import { userNameSchema } from '@/auth';
 import {
   CodeGenerationError,
   destinationSchema,
@@ -18,7 +19,7 @@ function signedInUser(context: ActionAPIContext) {
   if (!user) {
     throw new ActionError({
       code: 'UNAUTHORIZED',
-      message: 'Sign in to manage your Links.',
+      message: 'Sign in first.',
     });
   }
   return user;
@@ -32,6 +33,20 @@ function rethrowNotFound(error: unknown): never {
 }
 
 export const server = {
+  user: {
+    rename: defineAction({
+      input: z.object({ name: userNameSchema }),
+      handler: async ({ name }, context) => {
+        signedInUser(context);
+        // Better Auth renames the User the session belongs to, never another one.
+        await auth.api.updateUser({
+          headers: context.request.headers,
+          body: { name },
+        });
+        return { name };
+      },
+    }),
+  },
   links: {
     create: defineAction({
       input: z.object({ destination: destinationSchema, name: nameSchema }),
