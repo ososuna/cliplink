@@ -1,4 +1,4 @@
-import { and, count, desc, eq, ilike, isNull, like, or } from 'drizzle-orm';
+import { and, count, desc, eq, ilike, isNull, like, ne, or } from 'drizzle-orm';
 import type { Db } from '@/db';
 import { randomCode } from '@/links/code';
 import { parseDestination } from '@/links/destination';
@@ -26,6 +26,22 @@ export class CodeGenerationError extends Error {
   }
 }
 
+/** A missing Link and another Owner's Link look the same, so nobody can probe for other Owners' Links. */
+export class LinkNotFoundError extends Error {
+  constructor() {
+    super('Link not found.');
+    this.name = 'LinkNotFoundError';
+  }
+}
+
+const uuidPattern =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Postgres rejects a malformed uuid with an error, but to the caller it is just a Link that doesn't exist. */
+function assertLinkId(linkId: string) {
+  if (!uuidPattern.test(linkId)) throw new LinkNotFoundError();
+}
+
 /** Makes `text` match only itself inside a LIKE pattern. */
 function escapeLike(text: string): string {
   return text.replace(/[\\%_]/g, (special) => `\\${special}`);
@@ -39,9 +55,16 @@ function normalizeName(name: string | undefined): string | null {
 export function createLinks(deps: { db: Db; generateCode?: () => string }) {
   const { db, generateCode = randomCode } = deps;
 
-  /** The Name itself, or the first free "Name (n)" among the Owner's Links that aren't deleted. */
-  async function uniqueName(opts: { ownerId: string; name: string }) {
-    const { ownerId, name } = opts;
+  /**
+   * The Name itself, or the first free "Name (n)" among the Owner's Links that aren't deleted.
+   * A Link being renamed doesn't count, so it can keep its own Name.
+   */
+  async function uniqueName(opts: {
+    ownerId: string;
+    name: string;
+    renaming?: string;
+  }) {
+    const { ownerId, name, renaming } = opts;
     const taken = await db
       .select({ name: link.name })
       .from(link)
@@ -49,6 +72,7 @@ export function createLinks(deps: { db: Db; generateCode?: () => string }) {
         and(
           eq(link.ownerId, ownerId),
           isNull(link.deletedAt),
+          renaming ? ne(link.id, renaming) : undefined,
           or(eq(link.name, name), like(link.name, `${escapeLike(name)} (%)`)),
         ),
       );
@@ -124,11 +148,55 @@ export function createLinks(deps: { db: Db; generateCode?: () => string }) {
       };
     },
 
+    async renameLink(opts: {
+      ownerId: string;
+      linkId: string;
+      name: string;
+    }): Promise<Link> {
+      const { ownerId, linkId } = opts;
+      assertLinkId(linkId);
+      const baseName = normalizeName(opts.name);
+      const name = baseName
+        ? await uniqueName({ ownerId, name: baseName, renaming: linkId })
+        : null;
+      const [renamed] = await db
+        .update(link)
+        .set({ name })
+        .where(
+          and(
+            eq(link.id, linkId),
+            eq(link.ownerId, ownerId),
+            isNull(link.deletedAt),
+          ),
+        )
+        .returning();
+      if (!renamed) throw new LinkNotFoundError();
+      return renamed;
+    },
+
+    async deleteLink(opts: { ownerId: string; linkId: string }) {
+      const { ownerId, linkId } = opts;
+      assertLinkId(linkId);
+      // The row stays, so its Code is never given to a new Link.
+      const [deleted] = await db
+        .update(link)
+        .set({ deletedAt: new Date() })
+        .where(
+          and(
+            eq(link.id, linkId),
+            eq(link.ownerId, ownerId),
+            isNull(link.deletedAt),
+          ),
+        )
+        .returning({ id: link.id });
+      if (!deleted) throw new LinkNotFoundError();
+    },
+
     async findDestination(code: string): Promise<string | null> {
       const [found] = await db
         .select({ destination: link.destination })
         .from(link)
-        .where(eq(link.code, code));
+        .where(and(eq(link.code, code), isNull(link.deletedAt)));
       return found?.destination ?? null;
     },
   };

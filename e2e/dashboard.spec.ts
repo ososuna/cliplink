@@ -125,3 +125,98 @@ test('the dashboard pages through Links, newest first', async ({
     0,
   );
 });
+
+test('an Owner renames and deletes a Link, and its Code then shows the 404 page', async ({
+  page,
+  context,
+}) => {
+  const owner = await signIn(context);
+  const run = randomUUID();
+  await links.createLink({
+    destination: `https://example.com/kept/${run}`,
+    name: 'Docs',
+    ownerId: owner.id,
+  });
+  const link = await links.createLink({
+    destination: `https://example.com/renamed/${run}`,
+    name: 'Draft',
+    ownerId: owner.id,
+  });
+  await page.goto('/dashboard');
+  const card = linkCards(page).filter({ hasText: `/renamed/${run}` });
+
+  await card.getByRole('button', { name: 'Rename' }).click();
+  const rename = page.getByRole('dialog', { name: 'Rename URL' });
+  // A Destination is fixed at creation, so the dialog only offers the Name.
+  await expect(rename.getByRole('textbox')).toHaveCount(1);
+  await expect(rename.getByLabel('Name')).toHaveValue('Draft');
+  await rename.getByLabel('Name').fill('Docs');
+  await rename.getByRole('button', { name: 'Rename' }).click();
+  await expect(rename).toBeHidden();
+  await expect(card.getByRole('heading')).toHaveText('Docs (2)');
+  await expect(card).toContainText(`https://example.com/renamed/${run}`);
+
+  await card.getByRole('button', { name: 'Delete' }).click();
+  const confirm = page.getByRole('dialog', {
+    name: 'Are you sure you want to delete this short URL?',
+  });
+  await confirm.getByRole('button', { name: 'Delete URL' }).click();
+  await expect(confirm).toBeHidden();
+  await expect(card).toHaveCount(0);
+  await expect(linkCards(page).getByRole('heading')).toHaveText(['Docs']);
+
+  const response = await page.goto(`/${link.code}`);
+  expect(response?.status()).toBe(404);
+  await expect(page.getByText('Page not found')).toBeVisible();
+});
+
+test("renaming or deleting another Owner's Link looks the same as a missing Link", async ({
+  context,
+}) => {
+  const other = await signIn(context);
+  const theirs = await links.createLink({
+    destination: 'https://example.com/theirs',
+    name: 'Theirs',
+    ownerId: other.id,
+  });
+  await context.clearCookies();
+  await signIn(context);
+
+  const attempts = [theirs.id, randomUUID()].flatMap((linkId) => [
+    context.request.post('/_actions/links.rename', {
+      data: { linkId, name: 'Mine now' },
+    }),
+    context.request.post('/_actions/links.delete', { data: { linkId } }),
+  ]);
+  const responses = await Promise.all(attempts);
+
+  const results = await Promise.all(
+    responses.map(async (response) => [
+      response.status(),
+      await response.text(),
+    ]),
+  );
+  expect(results.map(([status]) => status)).toEqual([404, 404, 404, 404]);
+  // The Links module's message, not Astro's "action not found".
+  for (const [, body] of results) expect(body).toContain('Link not found.');
+  expect(results[0]).toEqual(results[2]);
+  expect(results[1]).toEqual(results[3]);
+  await expect(links.findDestination(theirs.code)).resolves.toBe(
+    'https://example.com/theirs',
+  );
+  const listed = await links.listLinks(other.id, { page: 1, limit: 10 });
+  expect(listed.items.map((item) => item.name)).toEqual(['Theirs']);
+});
+
+test('a Visitor cannot rename or delete Links', async ({ request }) => {
+  const responses = await Promise.all([
+    request.post('/_actions/links.rename', {
+      data: { linkId: randomUUID(), name: 'Nope' },
+    }),
+    request.post('/_actions/links.delete', {
+      data: { linkId: randomUUID() },
+    }),
+  ]);
+
+  expect(responses.map((response) => response.status())).toEqual([401, 401]);
+});
