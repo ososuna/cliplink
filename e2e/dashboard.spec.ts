@@ -116,7 +116,6 @@ test('the dashboard pages through Links, newest first', async ({
     'Link 2',
     'Link 1',
   ]);
-  // On the last page, Next is no longer a link.
   await expect(page.getByLabel('Go to next page')).toHaveAttribute(
     'aria-disabled',
     'true',

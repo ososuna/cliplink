@@ -94,7 +94,6 @@ export function createLinks(deps: { db: Db; generateCode?: () => string }) {
     return candidate;
   }
 
-  /** Only the Owner's Links that aren't deleted can change. */
   function ownedLiveLink(opts: { ownerId: string; linkId: string }) {
     return and(
       eq(link.id, opts.linkId),
@@ -188,7 +187,6 @@ export function createLinks(deps: { db: Db; generateCode?: () => string }) {
           if (!renamed) throw new LinkNotFoundError();
           return renamed;
         } catch (error) {
-          // A concurrent rename or create took the Name, so pick the next free one.
           if (!isNameTaken(error) || attempt === nameAttempts) throw error;
         }
       }
