@@ -5,6 +5,7 @@ import { createTestDb } from '@/db/testing';
 import {
   CodeGenerationError,
   InvalidDestinationError,
+  LinkNotFoundError,
   createLinks,
 } from '@/links';
 
@@ -308,5 +309,115 @@ describe('searching with listLinks', () => {
 
     await expect(mine.search('secret')).resolves.toEqual([]);
     await expect(theirs.search('secret')).resolves.toHaveLength(1);
+  });
+});
+
+describe('deleteLink', () => {
+  // Regression: the old API kept redirecting Deleted Links.
+  it('makes the Code lead nowhere', async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const link = await links.createLink({
+      destination: 'https://example.com/gone',
+      ownerId: owner,
+    });
+
+    await links.deleteLink({ ownerId: owner, linkId: link.id });
+
+    await expect(links.findDestination(link.code)).resolves.toBeNull();
+  });
+
+  // Regression: the old API let any signed-in User delete anyone's Link.
+  it("refuses another Owner's Link the same way as a missing one", async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const intruder = await createOwner();
+    const link = await links.createLink({
+      destination: 'https://example.com/not-yours',
+      ownerId: owner,
+    });
+
+    await expect(
+      links.deleteLink({ ownerId: intruder, linkId: link.id }),
+    ).rejects.toThrow(LinkNotFoundError);
+    await expect(
+      links.deleteLink({ ownerId: intruder, linkId: randomUUID() }),
+    ).rejects.toThrow(LinkNotFoundError);
+    await expect(links.findDestination(link.code)).resolves.toBe(
+      'https://example.com/not-yours',
+    );
+  });
+
+  it.each(['not-a-uuid', ''])('finds no Link for the id %j', async (linkId) => {
+    const links = createLinks({ db });
+
+    await expect(
+      links.deleteLink({ ownerId: await createOwner(), linkId }),
+    ).rejects.toThrow(LinkNotFoundError);
+  });
+
+  it('cannot touch an Anonymous Link', async () => {
+    const links = createLinks({ db });
+    const link = await links.createLink({
+      destination: 'https://example.com/anonymous',
+    });
+
+    await expect(
+      links.deleteLink({ ownerId: await createOwner(), linkId: link.id }),
+    ).rejects.toThrow(LinkNotFoundError);
+  });
+
+  it('treats an already Deleted Link as missing', async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const link = await links.createLink({
+      destination: 'https://example.com/twice',
+      ownerId: owner,
+    });
+    await links.deleteLink({ ownerId: owner, linkId: link.id });
+
+    await expect(
+      links.deleteLink({ ownerId: owner, linkId: link.id }),
+    ).rejects.toThrow(LinkNotFoundError);
+  });
+
+  it("removes the Link from the Owner's list", async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const kept = await links.createLink({
+      destination: 'https://example.com/kept',
+      ownerId: owner,
+    });
+    const gone = await links.createLink({
+      destination: 'https://example.com/gone',
+      ownerId: owner,
+    });
+
+    await links.deleteLink({ ownerId: owner, linkId: gone.id });
+
+    const listed = await links.listLinks(owner, { page: 1, limit: 10 });
+    expect(listed.items.map((item) => item.code)).toEqual([kept.code]);
+    expect(listed.total).toBe(1);
+  });
+
+  it('never gives its Code to a new Link', async () => {
+    const owner = await createOwner();
+    const deleted = await createLinks({
+      db,
+      generateCode: () => 'Reused1',
+    }).createLink({ destination: 'https://example.com/old', ownerId: owner });
+    await createLinks({ db }).deleteLink({
+      ownerId: owner,
+      linkId: deleted.id,
+    });
+    const codes = ['Reused1', 'Brand01'];
+    const links = createLinks({ db, generateCode: () => codes.shift()! });
+
+    const created = await links.createLink({
+      destination: 'https://example.com/new',
+    });
+
+    expect(created.code).toBe('Brand01');
+    await expect(links.findDestination('Reused1')).resolves.toBeNull();
   });
 });

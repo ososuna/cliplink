@@ -7,6 +7,7 @@ export {
   CodeGenerationError,
   createLinks,
   type Link,
+  LinkNotFoundError,
   type LinkPage,
   type Links,
 } from '@/links/links';
