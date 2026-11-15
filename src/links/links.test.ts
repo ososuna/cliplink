@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { eq } from 'drizzle-orm';
 import { schema, type Db } from '@/db';
 import { createTestDb } from '@/db/testing';
 import {
@@ -419,6 +420,75 @@ describe('deleteLink', () => {
 
     expect(created.code).toBe('Brand01');
     await expect(links.findDestination('Reused1')).resolves.toBeNull();
+  });
+});
+
+describe('deleteOwnerLinks', () => {
+  it("makes every one of the Owner's Links lead nowhere", async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const first = await links.createLink({
+      destination: 'https://example.com/first',
+      name: 'First',
+      ownerId: owner,
+    });
+    const second = await links.createLink({
+      destination: 'https://example.com/second',
+      ownerId: owner,
+    });
+
+    await links.deleteOwnerLinks(owner);
+
+    await expect(links.findDestination(first.code)).resolves.toBeNull();
+    await expect(links.findDestination(second.code)).resolves.toBeNull();
+    const listed = await links.listLinks(owner, { page: 1, limit: 10 });
+    expect(listed.total).toBe(0);
+  });
+
+  it("leaves other Owners' Links and Anonymous Links alone", async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const other = await createOwner();
+    const theirs = await links.createLink({
+      destination: 'https://example.com/theirs',
+      ownerId: other,
+    });
+    const anonymous = await links.createLink({
+      destination: 'https://example.com/anonymous',
+    });
+    await links.createLink({
+      destination: 'https://example.com/mine',
+      ownerId: owner,
+    });
+
+    await links.deleteOwnerLinks(owner);
+
+    await expect(links.findDestination(theirs.code)).resolves.toBe(
+      'https://example.com/theirs',
+    );
+    await expect(links.findDestination(anonymous.code)).resolves.toBe(
+      'https://example.com/anonymous',
+    );
+  });
+
+  it('keeps the Codes leading nowhere after the User is removed', async () => {
+    const owner = await createOwner();
+    const link = await createLinks({
+      db,
+      generateCode: () => 'Gone001',
+    }).createLink({ destination: 'https://example.com/old', ownerId: owner });
+    const codes = ['Gone001', 'Spare01'];
+    const links = createLinks({ db, generateCode: () => codes.shift()! });
+
+    await links.deleteOwnerLinks(owner);
+    // What Better Auth does next when a User deletes their User.
+    await db.delete(schema.user).where(eq(schema.user.id, owner));
+
+    await expect(links.findDestination(link.code)).resolves.toBeNull();
+    const created = await links.createLink({
+      destination: 'https://example.com/new',
+    });
+    expect(created.code).toBe('Spare01');
   });
 });
 

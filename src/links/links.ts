@@ -192,6 +192,18 @@ export function createLinks(deps: { db: Db; generateCode?: () => string }) {
       if (!deleted) throw new LinkNotFoundError();
     },
 
+    /**
+     * Makes all of an Owner's Links Deleted Links, for when they delete their User.
+     * Run it before the User row goes: removing the User clears `owner_id`, after which
+     * nothing tells their Links apart from Anonymous Links.
+     */
+    async deleteOwnerLinks(ownerId: string) {
+      await db
+        .update(link)
+        .set({ deletedAt: new Date() })
+        .where(and(eq(link.ownerId, ownerId), isNull(link.deletedAt)));
+    },
+
     async findDestination(code: string): Promise<string | null> {
       const [found] = await db
         .select({ destination: link.destination })
