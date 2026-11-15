@@ -16,6 +16,8 @@ pnpm db:migrate
 pnpm dev          # http://localhost:4321
 ```
 
+To sign in locally, fill in `BETTER_AUTH_SECRET` and the development Google and GitHub OAuth apps in `.env` (see `.env.example` for the callback URLs).
+
 ## Scripts
 
 | Script             | What it does                                                 |

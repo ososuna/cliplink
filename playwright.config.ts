@@ -1,9 +1,8 @@
 import 'dotenv/config';
 import { defineConfig, devices } from '@playwright/test';
+import { e2eEnv, e2eServer } from './e2e/support/env';
 
-// E2E_PORT lets parallel worktrees each run their own server.
-const port = Number(process.env.E2E_PORT ?? 4321);
-const baseURL = `http://localhost:${port}`;
+const { port, baseURL } = e2eServer;
 
 export default defineConfig({
   testDir: './e2e',
@@ -17,6 +16,6 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
-    env: { HOST: '127.0.0.1', PORT: String(port) },
+    env: { ...e2eEnv, HOST: '127.0.0.1', PORT: String(port) },
   },
 });

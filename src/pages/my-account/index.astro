@@ -1,0 +1,30 @@
+---
+import UserAvatar from '@/components/auth/UserAvatar';
+import HomeLayout from '@/components/layout/HomeLayout.astro';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+// The middleware only lets signed-in Users reach this page.
+const user = Astro.locals.user!;
+---
+
+<HomeLayout>
+  <section class="container mx-auto self-start px-4 py-8">
+    <h1 class="mb-8 text-2xl font-bold">My Account</h1>
+    <Card className="max-w-md">
+      <CardHeader>
+        <CardTitle>Profile Information</CardTitle>
+      </CardHeader>
+      <CardContent className="flex items-center gap-4">
+        <UserAvatar
+          name={user.name}
+          image={user.image ?? null}
+          className="h-16 w-16"
+        />
+        <div class="min-w-0">
+          <p class="truncate text-lg font-semibold">{user.name}</p>
+          <p class="truncate text-sm text-muted-foreground">{user.email}</p>
+        </div>
+      </CardContent>
+    </Card>
+  </section>
+</HomeLayout>

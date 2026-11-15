@@ -47,5 +47,5 @@ The User a Link belongs to.
 _Avoid_: creator, author
 
 **Provider**:
-An outside service a User signs in with: Google or GitHub. A User who signs in with two Providers using the same verified email is one User.
+An outside service a User signs in with: Google or GitHub. A User who signs in with two Providers using the same verified email is one User. A Provider that has not verified the email can't sign in to an existing User with that email.
 _Avoid_: social login, OAuth app, identity provider
