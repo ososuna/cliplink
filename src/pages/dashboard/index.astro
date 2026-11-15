@@ -1,9 +1,103 @@
 ---
+import { z } from 'astro/zod';
+import { links } from '@/app';
 import HomeLayout from '@/components/layout/HomeLayout.astro';
+import CreateLinkDialog from '@/components/links/CreateLinkDialog';
+import LinkCard from '@/components/links/LinkCard.astro';
+import SearchLinks from '@/components/links/SearchLinks';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination';
+
+// The middleware sends Visitors to sign in, so a User is always present here.
+const owner = Astro.locals.user!;
+
+// Malformed query values fall back to the defaults rather than failing the page.
+const query = z.object({
+  page: z.coerce.number().int().min(1).catch(1),
+  limit: z.coerce.number().int().min(1).max(60).catch(9),
+  search: z.string().catch(''),
+});
+const { page, limit, search } = query.parse({
+  page: Astro.url.searchParams.get('page') ?? undefined,
+  limit: Astro.url.searchParams.get('limit') ?? undefined,
+  search: Astro.url.searchParams.get('search') ?? undefined,
+});
+
+const listed = await links.listLinks(owner.id, { search, page, limit });
+
+function pageHref(target: number) {
+  const params = new URLSearchParams({ page: String(target) });
+  if (limit !== 9) params.set('limit', String(limit));
+  if (search) params.set('search', search);
+  return `/dashboard?${params}`;
+}
+const hasPrevious = page > 1;
+const hasNext = page < listed.totalPages;
 ---
 
 <HomeLayout>
   <section class="container mx-auto self-start px-4 py-8">
     <h1 class="mb-8 text-2xl font-bold">Dashboard</h1>
+    <div class="mb-6 flex items-center justify-between gap-4">
+      <div class="flex-grow">
+        <SearchLinks client:load transition:persist search={search} />
+      </div>
+      <CreateLinkDialog client:load />
+    </div>
+    {listed.total === 0 ? (
+      <p class="px-8 text-center text-sm text-muted-foreground">
+        {search ? (
+          <>
+            No URLs found matching "<strong>{search}</strong>". Please try a
+            different search term.
+          </>
+        ) : (
+          <>
+            You haven't shortened any URLs yet. Click the{' '}
+            <strong>"Shorten URL"</strong> button to shorten your first URL.
+          </>
+        )}
+      </p>
+    ) : (
+      <>
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {listed.items.map((link) => (
+            <LinkCard link={link} />
+          ))}
+        </div>
+        <Pagination className="mt-6">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                disabled={!hasPrevious}
+                href={hasPrevious ? pageHref(page - 1) : undefined}
+              />
+            </PaginationItem>
+            {Array.from({ length: listed.totalPages }, (_, index) => (
+              <PaginationItem>
+                <PaginationLink
+                  href={pageHref(index + 1)}
+                  isActive={index + 1 === page}
+                >
+                  {index + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            <PaginationItem>
+              <PaginationNext
+                disabled={!hasNext}
+                href={hasNext ? pageHref(page + 1) : undefined}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      </>
+    )}
   </section>
 </HomeLayout>

@@ -15,7 +15,7 @@ Run `pnpm check` (types, lint, format, Vitest) before saying you're done. Run `p
 Feature modules, not layers (ADR-0005). Each module's `index.ts` is its public interface.
 
 - `src/db`: Drizzle client (`createDb`), schema, and `createTestDb()` for Vitest. Migrations live in `drizzle/`.
-- `src/links`: every Link rule (`createLinks({ db })` gives `createLink`, `findDestination`) and the Link table. `src/links/destination.ts` is also imported by islands, since `@/links` would bundle database code.
+- `src/links`: every Link rule (`createLinks({ db })` gives `createLink`, `listLinks`, `findDestination`) and the Link table. `src/links/destination.ts` and `src/links/name.ts` are also imported by islands, since `@/links` would bundle database code.
 - `src/auth`: Better Auth (`createAuth`), its tables, the browser `authClient`, and sign-in error messages.
 - `src/app.ts`: the app's `db`, `links`, and `auth` instances, built from `astro:env`. Pages, Actions, and middleware import from here.
 - `src/middleware.ts`: puts the session on `Astro.locals` and sends Visitors on private pages to sign in.
