@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
+import { e2eEnv } from './e2e/support/env';
 
 const port = 4321;
-const baseURL = `http://localhost:${port}`;
+const baseURL = e2eEnv.BETTER_AUTH_URL;
 
 export default defineConfig({
   testDir: './e2e',
@@ -15,6 +16,6 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
-    env: { HOST: '127.0.0.1', PORT: String(port) },
+    env: { ...e2eEnv, HOST: '127.0.0.1', PORT: String(port) },
   },
 });

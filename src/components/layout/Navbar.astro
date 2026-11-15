@@ -1,7 +1,13 @@
 ---
+import { LogIn } from 'lucide-react';
+import UserMenu from '@/components/auth/UserMenu';
 import Logo from '@/components/layout/Logo.astro';
 import ModeToggle from '@/components/layout/ModeToggle';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { signInPath } from '@/auth';
+
+const { user } = Astro.locals;
 ---
 
 <header
@@ -14,6 +20,21 @@ import { Skeleton } from '@/components/ui/skeleton';
         <Logo class="h-8 w-8" />
       </div>
       <nav class="flex items-center justify-center gap-x-4">
+        {user ? (
+          <UserMenu
+            client:only="react"
+            name={user.name}
+            image={user.image ?? null}
+          >
+            <Skeleton slot="fallback" className="h-8 w-8 rounded-full" />
+          </UserMenu>
+        ) : (
+          <Button variant="ghost" asChild>
+            <a href={signInPath}>
+              <LogIn /> Log in
+            </a>
+          </Button>
+        )}
         <ModeToggle client:only="react">
           <Skeleton slot="fallback" className="h-9 w-9 rounded-md" />
         </ModeToggle>
