@@ -1,0 +1,35 @@
+---
+import BaseLayout from '@/components/layout/BaseLayout.astro';
+import Logo from '@/components/layout/Logo.astro';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+
+export const prerender = true;
+---
+
+<BaseLayout title="ClipLink - 404" description="404 - Not Found">
+  <div class="flex h-screen w-full items-center justify-center bg-background">
+    <Card className="w-[350px] text-center">
+      <CardHeader>
+        <div class="mb-2 flex justify-center">
+          <Logo class="h-8 w-8" />
+        </div>
+        <CardTitle className="text-4xl font-bold">404</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p class="text-xl text-muted-foreground">Page not found</p>
+      </CardContent>
+      <CardFooter className="flex justify-center">
+        <Button asChild>
+          <a href="/">Go Home</a>
+        </Button>
+      </CardFooter>
+    </Card>
+  </div>
+</BaseLayout>
