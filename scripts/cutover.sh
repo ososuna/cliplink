@@ -547,18 +547,12 @@ say "create Action, when the request has no session cookie."
 printf '\n'
 warn "Trade-off: the WAF can only see whether the session cookie exists, not whether"
 warn "it is valid. A script that sends any cookie with that name skips the limit."
-note "Limiting every create instead closes that gap, but also limits signed-in Users"
-note "(30 per minute per IP is far above human use). The spec asks for anonymous only."
-scope="anonymous"
+note "The spec puts no limit on signed-in actions, so the rule leaves them alone."
 conditions=(
   --condition '{"type":"path","op":"pre","value":"/_actions/links.create"}'
   --condition '{"type":"method","op":"eq","value":"POST"}'
+  --condition '{"type":"cookie","key":"__Secure-better-auth.session_token","op":"nex"}'
 )
-if confirm "Limit every create instead, signed-in Users included?"; then
-  scope="every-create"
-else
-  conditions+=(--condition '{"type":"cookie","key":"__Secure-better-auth.session_token","op":"nex"}')
-fi
 if confirm "Add the rule now with the Vercel CLI?"; then
   vercel firewall rules add "Anonymous Link creation" "${conditions[@]}" \
     --description "Anonymous Link creation: 30 per minute per IP (spec #1)" \
@@ -572,7 +566,7 @@ else
   open_url "https://vercel.com/dashboard"
   step "Project > Firewall > Configure > New Rule, name 'Anonymous Link creation'."
   step "If Request Path starts with /_actions/links.create, and Method equals POST"
-  [[ "$scope" == anonymous ]] && step "  and Cookie __Secure-better-auth.session_token does not exist,"
+  step "  and Cookie __Secure-better-auth.session_token does not exist,"
   step "Then Rate Limit: Fixed Window, 60 seconds, 30 requests, key IP, action Too Many Requests."
   step "Save, then Review Changes > Publish."
 fi
@@ -581,7 +575,7 @@ pause "Press Enter when the rule shows as published (not a draft)."
 note "Optional check: 31 invalid creates from this IP (no Link is created), then one"
 note "with a fake session cookie. Your IP can't create Links for up to a minute after."
 if confirm "Run the check now?"; then
-  until_ok "rate limit probe" verify rate-limit "$PROD_URL" "$scope"
+  until_ok "rate limit probe" verify rate-limit "$PROD_URL"
 fi
 
 # ── 11 ────────────────────────────────────────────────────────────────────

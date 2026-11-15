@@ -17,7 +17,7 @@ const auth = [
   'GITHUB_CLIENT_SECRET',
 ];
 
-// The old Astro UI's variables (docs/adr/old-ui.md). Nothing reads them any more.
+// The old Astro UI's variables. Nothing reads them any more.
 const legacy = [
   'PUBLIC_API_BASE_URL',
   'PUBLIC_API_DOMAIN',
@@ -48,7 +48,6 @@ export function checkEnv(env: Env, target: 'production' | 'preview') {
   ];
 }
 
-// A Redirect answers 302 with the Destination as Location.
 export function checkRedirect(
   response: { status: number; location: string | null },
   destination: string,
@@ -65,30 +64,23 @@ export function checkRedirect(
   ];
 }
 
-// Which requests the WAF rule limits: only those without a session cookie, or every create.
-export type RateLimitScope = 'anonymous' | 'every-create';
-
 // Statuses from a burst of create requests sent within one window, then one request
 // carrying a session cookie (sent while the burst's IP is already over the limit).
-export function checkRateLimit(
-  probe: { anonymous: number[]; withSession: number },
-  scope: RateLimitScope,
-) {
-  const problems: string[] = [];
-  if (!probe.anonymous.includes(429)) {
-    problems.push(
-      `${probe.anonymous.length} anonymous requests in a minute never got a 429`,
-    );
-  }
-  if (scope === 'every-create' && probe.withSession !== 429) {
-    problems.push(
-      `A request with a session cookie got ${probe.withSession}, expected 429`,
-    );
-  }
-  if (scope === 'anonymous' && probe.withSession === 429) {
-    problems.push('A request with a session cookie got 429, expected no limit');
-  }
-  return problems;
+// The spec limits anonymous creation only, so the cookie must get through.
+export function checkRateLimit(probe: {
+  anonymous: number[];
+  withSession: number;
+}) {
+  return [
+    ...(probe.anonymous.includes(429)
+      ? []
+      : [
+          `${probe.anonymous.length} anonymous requests in a minute never got a 429`,
+        ]),
+    ...(probe.withSession === 429
+      ? ['A request with a session cookie got 429, expected no limit']
+      : []),
+  ];
 }
 
 // drizzle-kit stores each applied migration's journal `when` as created_at in

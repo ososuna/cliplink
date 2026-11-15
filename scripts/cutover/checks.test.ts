@@ -120,27 +120,24 @@ describe('checkRateLimit', () => {
   const limited = [...Array<number>(30).fill(400), 429];
 
   it('passes when anonymous creation hits 429 and a session cookie does not', () => {
-    expect(
-      checkRateLimit({ anonymous: limited, withSession: 400 }, 'anonymous'),
-    ).toEqual([]);
+    expect(checkRateLimit({ anonymous: limited, withSession: 400 })).toEqual(
+      [],
+    );
   });
 
   it('reports a rule that never limits', () => {
     expect(
-      checkRateLimit(
-        { anonymous: Array<number>(31).fill(400), withSession: 400 },
-        'anonymous',
-      ),
+      checkRateLimit({
+        anonymous: Array<number>(31).fill(400),
+        withSession: 400,
+      }),
     ).toEqual(['31 anonymous requests in a minute never got a 429']);
   });
 
-  it('expects the session cookie to be limited too when the rule covers every create', () => {
-    expect(
-      checkRateLimit({ anonymous: limited, withSession: 400 }, 'every-create'),
-    ).toEqual(['A request with a session cookie got 400, expected 429']);
-    expect(
-      checkRateLimit({ anonymous: limited, withSession: 429 }, 'anonymous'),
-    ).toEqual(['A request with a session cookie got 429, expected no limit']);
+  it('reports a rule that limits signed-in creation too', () => {
+    expect(checkRateLimit({ anonymous: limited, withSession: 429 })).toEqual([
+      'A request with a session cookie got 429, expected no limit',
+    ]);
   });
 });
 
