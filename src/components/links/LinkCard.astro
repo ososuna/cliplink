@@ -1,6 +1,8 @@
 ---
 import { ExternalLink } from 'lucide-react';
 import CopyButton from '@/components/links/CopyButton';
+import DeleteLinkDialog from '@/components/links/DeleteLinkDialog';
+import RenameLinkDialog from '@/components/links/RenameLinkDialog';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -49,6 +51,8 @@ const path = `/${link.code}`;
           <ExternalLink />
         </a>
       </Button>
+      <RenameLinkDialog client:load linkId={link.id} name={link.name} />
+      <DeleteLinkDialog client:load linkId={link.id} />
     </CardFooter>
   </Card>
 </article>
