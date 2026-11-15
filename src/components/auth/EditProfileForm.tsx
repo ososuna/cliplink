@@ -1,17 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { actions, isInputError } from 'astro:actions';
 import { z } from 'astro/zod';
-import { Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 // Not '@/auth': that would pull the server code into the browser bundle.
 import { userNameSchema } from '@/auth/name';
-import { Button } from '@/components/ui/button';
+import {
+  fallbackMessage,
+  Field,
+  fieldAria,
+  PendingButton,
+} from '@/components/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 const formSchema = z.object({ name: userNameSchema });
-
-const fallbackMessage = 'Something went wrong. Please try again.';
 
 export default function EditProfileForm({
   name,
@@ -45,23 +46,15 @@ export default function EditProfileForm({
 
   return (
     <form onSubmit={onSubmit} noValidate className="grid gap-4">
-      <div className="grid gap-2">
-        <Label htmlFor="profile-name">Name</Label>
+      <Field id="profile-name" label="Name" error={errors.name?.message}>
         <Input
           id="profile-name"
           autoComplete="name"
-          aria-invalid={!!errors.name}
-          aria-describedby={errors.name ? 'profile-name-error' : undefined}
+          {...fieldAria({ id: 'profile-name', error: errors.name?.message })}
           {...register('name')}
         />
-        {errors.name && (
-          <p id="profile-name-error" className="text-sm text-destructive">
-            {errors.name.message}
-          </p>
-        )}
-      </div>
-      <div className="grid gap-2">
-        <Label htmlFor="profile-email">Email</Label>
+      </Field>
+      <Field id="profile-email" label="Email">
         <Input
           id="profile-email"
           value={email}
@@ -71,16 +64,14 @@ export default function EditProfileForm({
         <p id="profile-email-hint" className="text-sm text-muted-foreground">
           Your email comes from the Provider you sign in with.
         </p>
-      </div>
-      <Button type="submit" disabled={isSubmitting}>
-        {isSubmitting ? (
-          <>
-            <Loader2 className="animate-spin" /> Updating...
-          </>
-        ) : (
-          'Update Profile'
-        )}
-      </Button>
+      </Field>
+      <PendingButton
+        type="submit"
+        pending={isSubmitting}
+        pendingLabel="Updating..."
+      >
+        Update Profile
+      </PendingButton>
     </form>
   );
 }
