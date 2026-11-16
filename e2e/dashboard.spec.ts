@@ -116,11 +116,12 @@ for (const viewport of [
     const card = linkCards(page).first();
 
     const cardBox = await card.boundingBox();
-    for (const text of [
+    for (const truncated of [
       card.getByRole('heading'),
       card.getByTitle(destination),
     ]) {
-      const box = await text.boundingBox();
+      await expect(truncated).toHaveCSS('text-overflow', 'ellipsis');
+      const box = await truncated.boundingBox();
       expect(box!.x + box!.width).toBeLessThanOrEqual(
         cardBox!.x + cardBox!.width,
       );
