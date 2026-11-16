@@ -1,0 +1,390 @@
+---
+// PROTOTYPE: throwaway. Answers "what should the broken link-buttons and Link cards look like?"
+// Run with `pnpm prototype:ui-fixes`, switch variants with ?variant= or the bottom bar.
+// Not for main: only the chosen variant gets folded into the real components.
+import {
+  Copy,
+  ExternalLink,
+  LogIn,
+  Sun,
+  TextCursorInput,
+  Trash,
+} from 'lucide-react';
+import BaseLayout from '@/components/layout/BaseLayout.astro';
+import Logo from '@/components/layout/Logo.astro';
+import { Button, buttonVariants } from '@/components/ui/button';
+import {
+  Card,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+} from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+
+// Prerendered so the middleware skips it and no database is needed.
+export const prerender = true;
+
+const variants = [
+  {
+    id: 'before',
+    label: 'Before (prod)',
+    summary:
+      'What production renders today. <Button asChild> inside .astro drops every button class, so the <a> is bare. Card headers overflow because the grid track is auto-sized.',
+  },
+  {
+    id: 'a',
+    label: 'A: faithful fix',
+    summary:
+      'What the code meant to render: buttonVariants() classes put straight on the <a>. Log in is a ghost button with a 16px icon, Navigate is an outline icon button like its neighbours. Headers truncate.',
+  },
+  {
+    id: 'b',
+    label: 'B: quiet',
+    summary:
+      'Lighter chrome. Log in is text only and matches the 32px theme toggle. Card actions are borderless ghost icons in one tight group, Delete is a ghost red icon.',
+  },
+  {
+    id: 'c',
+    label: 'C: copy first',
+    summary:
+      'Log in is a small outline button. On the card, Copy is the labelled primary action (it is what Owners do most), the rest are outline icons.',
+  },
+];
+
+const links = [
+  {
+    code: 'long01',
+    name: 'A really long Link name that should truncate nicely',
+    destination:
+      'https://example.com/a/very/long/path/that/keeps/going/and/going/forever?utm_source=newsletter',
+  },
+  {
+    code: 'noname',
+    name: null,
+    destination: 'https://github.com/ososuna/cliplink',
+  },
+  {
+    code: 'docs01',
+    name: 'Docs',
+    destination: 'https://example.com/docs/getting-started',
+  },
+];
+const linkPath = (code: string) => `/${code}`;
+
+const iconBtn = (variant: 'outline' | 'ghost') =>
+  buttonVariants({ variant, size: 'icon' });
+---
+
+<BaseLayout title="PROTOTYPE: UI fixes" description="Throwaway prototype">
+  <div class="container mx-auto space-y-10 px-4 pt-6 pb-32">
+    <div class="rounded-md border border-dashed border-amber-500 bg-amber-50 p-4 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+      <p class="font-semibold">
+        PROTOTYPE, throwaway. Variant: <code id="proto-current"></code>
+      </p>
+      <p id="proto-summary" class="mt-1"></p>
+    </div>
+
+    <!-- 1. Navbar, signed out -->
+    <section class="space-y-3">
+      <h2 class="text-lg font-semibold">1. Navbar (signed out)</h2>
+      <div class="rounded-md border">
+        <div class="flex h-12 items-center justify-between px-4">
+          <div class="text-lg font-bold">
+            <Logo class="h-8 w-8" />
+          </div>
+          <nav class="flex items-center gap-x-4">
+            <div data-variant="before">
+              <Button variant="ghost" asChild>
+                <a href="#">
+                  <LogIn /> Log in
+                </a>
+              </Button>
+            </div>
+            <a
+              data-variant="a"
+              href="#"
+              class={buttonVariants({ variant: 'ghost' })}
+            >
+              <LogIn /> Log in
+            </a>
+            <a
+              data-variant="b"
+              href="#"
+              class={buttonVariants({ variant: 'ghost', size: 'sm' })}
+            >
+              Log in
+            </a>
+            <a
+              data-variant="c"
+              href="#"
+              class={buttonVariants({ variant: 'outline', size: 'sm' })}
+            >
+              <LogIn /> Log in
+            </a>
+            <span class={cn(iconBtn('ghost'), 'h-8 w-8')}>
+              <Sun />
+            </span>
+          </nav>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. Dashboard Link cards -->
+    <section class="space-y-3">
+      <h2 class="text-lg font-semibold">2. Dashboard Link cards</h2>
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {links.map((link) => (
+          <article>
+            <Card className="h-full">
+              {/* before: header as in prod (auto grid track, no truncation) */}
+              <div data-variant="before">
+                <CardHeader>
+                  <div class="flex items-center gap-2">
+                    <h3 class="flex-1 truncate text-lg leading-none font-semibold">
+                      {link.name ?? linkPath(link.code)}
+                    </h3>
+                    {link.name && (
+                      <span class="shrink-0 text-sm text-muted-foreground">
+                        {linkPath(link.code)}
+                      </span>
+                    )}
+                  </div>
+                  <CardDescription className="truncate">
+                    {link.destination}
+                  </CardDescription>
+                </CardHeader>
+              </div>
+              {/* fixed header: grid-cols-1 gives the track minmax(0, 1fr) so truncate works */}
+              <div data-variant="a b c">
+                <CardHeader className="grid-cols-1">
+                  <div class="flex min-w-0 items-center gap-2">
+                    <h3
+                      class="min-w-0 flex-1 truncate text-lg leading-none font-semibold"
+                      title={link.name ?? linkPath(link.code)}
+                    >
+                      {link.name ?? linkPath(link.code)}
+                    </h3>
+                    {link.name && (
+                      <span class="shrink-0 text-sm text-muted-foreground">
+                        {linkPath(link.code)}
+                      </span>
+                    )}
+                  </div>
+                  <CardDescription
+                    className="truncate"
+                    title={link.destination}
+                  >
+                    {link.destination}
+                  </CardDescription>
+                </CardHeader>
+              </div>
+
+              <div data-variant="before">
+                <CardFooter className="mt-auto flex gap-2">
+                  <span class={iconBtn('outline')}>
+                    <Copy />
+                  </span>
+                  <Button asChild variant="outline" size="icon">
+                    <a href="#" aria-label="Navigate">
+                      <ExternalLink />
+                    </a>
+                  </Button>
+                  <span class={iconBtn('outline')}>
+                    <TextCursorInput />
+                  </span>
+                  <span
+                    class={cn(
+                      iconBtn('outline'),
+                      'ml-auto border-destructive text-destructive',
+                    )}
+                  >
+                    <Trash />
+                  </span>
+                </CardFooter>
+              </div>
+
+              <div data-variant="a">
+                <CardFooter className="mt-auto flex gap-2">
+                  <span class={iconBtn('outline')}>
+                    <Copy />
+                  </span>
+                  <a href="#" aria-label="Navigate" class={iconBtn('outline')}>
+                    <ExternalLink />
+                  </a>
+                  <span class={iconBtn('outline')}>
+                    <TextCursorInput />
+                  </span>
+                  <span
+                    class={cn(
+                      iconBtn('outline'),
+                      'ml-auto border-destructive text-destructive',
+                    )}
+                  >
+                    <Trash />
+                  </span>
+                </CardFooter>
+              </div>
+
+              <div data-variant="b">
+                <CardFooter className="mt-auto flex gap-1">
+                  <span class={iconBtn('ghost')}>
+                    <Copy />
+                  </span>
+                  <a href="#" aria-label="Navigate" class={iconBtn('ghost')}>
+                    <ExternalLink />
+                  </a>
+                  <span class={iconBtn('ghost')}>
+                    <TextCursorInput />
+                  </span>
+                  <span
+                    class={cn(
+                      iconBtn('ghost'),
+                      'ml-auto text-destructive hover:text-destructive',
+                    )}
+                  >
+                    <Trash />
+                  </span>
+                </CardFooter>
+              </div>
+
+              <div data-variant="c">
+                <CardFooter className="mt-auto flex gap-2">
+                  <span class={buttonVariants({ size: 'default' })}>
+                    <Copy /> Copy
+                  </span>
+                  <a href="#" aria-label="Navigate" class={iconBtn('outline')}>
+                    <ExternalLink />
+                  </a>
+                  <span class={iconBtn('outline')}>
+                    <TextCursorInput />
+                  </span>
+                  <span
+                    class={cn(
+                      iconBtn('outline'),
+                      'ml-auto border-destructive text-destructive',
+                    )}
+                  >
+                    <Trash />
+                  </span>
+                </CardFooter>
+              </div>
+            </Card>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <!-- 3. Post-shorten page actions + 404 (same asChild bug, no design choice) -->
+    <section class="space-y-3">
+      <h2 class="text-lg font-semibold">
+        3. Shortened-URL page and 404 (same bug, same fix in every variant)
+      </h2>
+      <div class="flex flex-wrap items-center gap-6 rounded-md border p-6">
+        <div data-variant="before" class="flex flex-wrap gap-4">
+          <Button asChild>
+            <a href="#">
+              <ExternalLink /> Open Short URL
+            </a>
+          </Button>
+          <Button asChild variant="outline">
+            <a href="#">Shorten another URL</a>
+          </Button>
+          <Button asChild>
+            <a href="#">Go Home</a>
+          </Button>
+        </div>
+        <div data-variant="a b c" class="flex flex-wrap gap-4">
+          <a href="#" class={buttonVariants()}>
+            <ExternalLink /> Open Short URL
+          </a>
+          <a href="#" class={buttonVariants({ variant: 'outline' })}>
+            Shorten another URL
+          </a>
+          <a href="#" class={buttonVariants()}>
+            Go Home
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- State: what the current variant actually renders -->
+    <section class="space-y-2">
+      <h2 class="text-lg font-semibold">State</h2>
+      <pre
+        id="proto-state"
+        class="overflow-x-auto rounded-md bg-muted p-4 text-xs"
+      ></pre>
+    </section>
+  </div>
+
+  <nav class="fixed inset-x-0 bottom-4 z-50 mx-auto flex w-fit gap-1 rounded-full border bg-background/95 p-1 shadow-lg backdrop-blur">
+    {variants.map((v) => (
+      <a
+        href={`?variant=${v.id}`}
+        data-proto-link={v.id}
+        class={buttonVariants({
+          variant: 'ghost',
+          size: 'sm',
+          className: 'rounded-full',
+        })}
+      >
+        {v.label}
+      </a>
+    ))}
+  </nav>
+
+  <script is:inline define:vars={{ variants }}>
+    function applyVariant() {
+      const id = new URLSearchParams(location.search).get('variant') ?? 'a';
+      const current = variants.find((v) => v.id === id) ?? variants[1];
+      document.querySelectorAll('[data-variant]').forEach((el) => {
+        el.hidden = !el.dataset.variant.split(' ').includes(current.id);
+      });
+      document.querySelectorAll('[data-proto-link]').forEach((el) => {
+        const active = el.dataset.protoLink === current.id;
+        el.classList.toggle('bg-primary', active);
+        el.classList.toggle('text-primary-foreground', active);
+      });
+      document.getElementById('proto-current').textContent = current.id;
+      document.getElementById('proto-summary').textContent = current.summary;
+      // Measure what is on screen, so the fix is checked, not just claimed.
+      const measure = (el) => {
+        const r = el.getBoundingClientRect();
+        return `${Math.round(r.width)}x${Math.round(r.height)}`;
+      };
+      const visible = (sel) =>
+        [...document.querySelectorAll(sel)].filter(
+          (el) => el.offsetParent !== null,
+        );
+      const login = visible('nav a[href="#"]')[0];
+      const navigate = visible('a[aria-label="Navigate"]')[0];
+      const overflow = visible('article').map((a) => {
+        const card = a.firstElementChild.getBoundingClientRect().right;
+        const widest = Math.max(
+          ...[...a.querySelectorAll('h3, [data-slot=card-description]')]
+            .filter((el) => el.offsetParent !== null)
+            .map((el) => el.getBoundingClientRect().right),
+        );
+        return Math.max(0, Math.round(widest - card));
+      });
+      document.getElementById('proto-state').textContent = JSON.stringify(
+        {
+          variant: current.id,
+          loginButton: login && {
+            size: measure(login),
+            classes: login.className || '(none)',
+          },
+          navigateButton: navigate && {
+            size: measure(navigate),
+            classes: navigate.className || '(none)',
+          },
+          cardHeaderOverflowPx: overflow,
+        },
+        null,
+        2,
+      );
+    }
+    applyVariant();
+    document.addEventListener('astro:page-load', applyVariant);
+  </script>
+</BaseLayout>

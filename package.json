@@ -22,7 +22,8 @@
     "db:dev": "docker compose up -d --wait db",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "prepare": "simple-git-hooks"
+    "prepare": "simple-git-hooks",
+    "prototype:ui-fixes": "DATABASE_URL=postgres://proto:proto@localhost:1/none BETTER_AUTH_URL=http://localhost:4321 BETTER_AUTH_SECRET=prototype-only GOOGLE_CLIENT_ID=x GOOGLE_CLIENT_SECRET=x GITHUB_CLIENT_ID=x GITHUB_CLIENT_SECRET=x astro dev --open /prototype-ui-fixes"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm exec lint-staged"
