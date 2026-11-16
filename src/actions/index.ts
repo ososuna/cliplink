@@ -10,6 +10,7 @@ import {
   CodeGenerationError,
   destinationSchema,
   InvalidDestinationError,
+  InvalidNameError,
   LinkNotFoundError,
   nameSchema,
 } from '@/links';
@@ -25,9 +26,22 @@ function signedInUser(context: ActionAPIContext) {
   return user;
 }
 
-function rethrowNotFound(error: unknown): never {
+/** Turns what the Links module refuses into the Action error the forms show. */
+function rethrowLinkError(error: unknown): never {
   if (error instanceof LinkNotFoundError) {
     throw new ActionError({ code: 'NOT_FOUND', message: error.message });
+  }
+  if (
+    error instanceof InvalidDestinationError ||
+    error instanceof InvalidNameError
+  ) {
+    throw new ActionError({ code: 'BAD_REQUEST', message: error.message });
+  }
+  if (error instanceof CodeGenerationError) {
+    throw new ActionError({
+      code: 'SERVICE_UNAVAILABLE',
+      message: error.message,
+    });
   }
   throw error;
 }
@@ -60,19 +74,7 @@ export const server = {
           });
           return { code: link.code };
         } catch (error) {
-          if (error instanceof InvalidDestinationError) {
-            throw new ActionError({
-              code: 'BAD_REQUEST',
-              message: error.message,
-            });
-          }
-          if (error instanceof CodeGenerationError) {
-            throw new ActionError({
-              code: 'SERVICE_UNAVAILABLE',
-              message: error.message,
-            });
-          }
-          throw error;
+          rethrowLinkError(error);
         }
       },
     }),
@@ -84,11 +86,11 @@ export const server = {
           const link = await links.renameLink({
             ownerId: owner.id,
             linkId,
-            name: name ?? '',
+            name,
           });
           return { name: link.name };
         } catch (error) {
-          rethrowNotFound(error);
+          rethrowLinkError(error);
         }
       },
     }),
@@ -99,7 +101,7 @@ export const server = {
         try {
           await links.deleteLink({ ownerId: owner.id, linkId });
         } catch (error) {
-          rethrowNotFound(error);
+          rethrowLinkError(error);
         }
       },
     }),

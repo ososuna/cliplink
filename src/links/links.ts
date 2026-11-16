@@ -2,16 +2,17 @@ import { and, count, desc, eq, ilike, isNull, like, ne, or } from 'drizzle-orm';
 import type { Db } from '@/db';
 import { randomCode } from '@/links/code';
 import { parseDestination } from '@/links/destination';
+import { parseListing, type Listing } from '@/links/listing';
+import { nameMaxLength, parseName } from '@/links/name';
 import { link } from '@/links/schema';
 
 export type Link = typeof link.$inferSelect;
 
 export type Links = ReturnType<typeof createLinks>;
 
-export type LinkPage = {
+/** The Listing that was shown, which can differ from the one asked for, and what it holds. */
+export type LinkPage = Listing & {
   items: Link[];
-  page: number;
-  limit: number;
   total: number;
   totalPages: number;
 };
@@ -57,9 +58,15 @@ function isNameTaken(error: unknown): boolean {
   return code === '23505' && constraint === 'link_owner_name_unique';
 }
 
-function normalizeName(name: string | undefined): string | null {
-  const trimmed = name?.trim();
-  return trimmed ? trimmed : null;
+/** "Name (n)", with the Name cut short when the suffix would push it past the limit. */
+function numbered(opts: { name: string; counter: number }): string {
+  const suffix = ` (${opts.counter})`;
+  return opts.name.slice(0, nameMaxLength - suffix.length) + suffix;
+}
+
+/** The part of a Name every numbered form of it starts with, up to "Name (999)". */
+function numberedStem(name: string): string {
+  return name.slice(0, nameMaxLength - ' (999)'.length);
 }
 
 export function createLinks(deps: { db: Db; generateCode?: () => string }) {
@@ -83,13 +90,16 @@ export function createLinks(deps: { db: Db; generateCode?: () => string }) {
           eq(link.ownerId, ownerId),
           isNull(link.deletedAt),
           renaming ? ne(link.id, renaming) : undefined,
-          or(eq(link.name, name), like(link.name, `${escapeLike(name)} (%)`)),
+          or(
+            eq(link.name, name),
+            like(link.name, `${escapeLike(numberedStem(name))}% (%)`),
+          ),
         ),
       );
     const takenNames = new Set(taken.map((row) => row.name));
     let candidate = name;
     for (let counter = 2; takenNames.has(candidate); counter++) {
-      candidate = `${name} (${counter})`;
+      candidate = numbered({ name, counter });
     }
     return candidate;
   }
@@ -111,7 +121,7 @@ export function createLinks(deps: { db: Db; generateCode?: () => string }) {
       const destination = parseDestination(input.destination);
       const ownerId = input.ownerId ?? null;
       // Only Owners name Links, so an Anonymous Link never has a Name.
-      const baseName = ownerId ? normalizeName(input.name) : null;
+      const baseName = ownerId ? parseName(input.name) : null;
       for (let attempt = 0; attempt < codeAttempts; attempt++) {
         const name =
           ownerId && baseName
@@ -128,12 +138,12 @@ export function createLinks(deps: { db: Db; generateCode?: () => string }) {
       throw new CodeGenerationError();
     },
 
+    /** Never fails on a bad page or limit: it shows the nearest valid page instead. */
     async listLinks(
       ownerId: string,
-      options: { search?: string; page: number; limit: number },
+      asked: Partial<Listing>,
     ): Promise<LinkPage> {
-      const { page, limit } = options;
-      const search = options.search?.trim();
+      const { page: askedPage, limit, search } = parseListing(asked);
       const pattern = search ? `%${escapeLike(search)}%` : null;
       const matching = and(
         eq(link.ownerId, ownerId),
@@ -146,34 +156,34 @@ export function createLinks(deps: { db: Db; generateCode?: () => string }) {
             )
           : undefined,
       );
-      const [items, [counted]] = await Promise.all([
+      const fetchPage = (page: number) =>
         db
           .select()
           .from(link)
           .where(matching)
           .orderBy(desc(link.createdAt), desc(link.id))
           .limit(limit)
-          .offset((page - 1) * limit),
+          .offset((page - 1) * limit);
+      const [askedItems, [counted]] = await Promise.all([
+        fetchPage(askedPage),
         db.select({ total: count() }).from(link).where(matching),
       ]);
       const total = counted?.total ?? 0;
-      return {
-        items,
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-      };
+      const totalPages = Math.ceil(total / limit);
+      // Past the end, as after deleting the last Link on the last page.
+      const page = Math.min(askedPage, Math.max(totalPages, 1));
+      const items = page === askedPage ? askedItems : await fetchPage(page);
+      return { items, page, limit, search, total, totalPages };
     },
 
     async renameLink(opts: {
       ownerId: string;
       linkId: string;
-      name: string;
+      name?: string;
     }): Promise<Link> {
       const { ownerId, linkId } = opts;
       assertLinkId(linkId);
-      const baseName = normalizeName(opts.name);
+      const baseName = parseName(opts.name);
       for (let attempt = 1; ; attempt++) {
         const name = baseName
           ? await uniqueName({ ownerId, name: baseName, renaming: linkId })

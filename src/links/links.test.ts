@@ -6,6 +6,7 @@ import { createTestDb } from '@/db/testing';
 import {
   CodeGenerationError,
   InvalidDestinationError,
+  InvalidNameError,
   LinkNotFoundError,
   createLinks,
 } from '@/links';
@@ -149,18 +150,57 @@ describe('listLinks', () => {
     const [first, second, third, fourth, fifth] = codes;
 
     const pages = await Promise.all(
-      [1, 2, 3, 4].map((page) => links.listLinks(owner, { page, limit: 2 })),
+      [1, 2, 3].map((page) => links.listLinks(owner, { page, limit: 2 })),
     );
 
     expect(
       pages.map((listed) => listed.items.map((item) => item.code)),
-    ).toEqual([[fifth, fourth], [third, second], [first], []]);
+    ).toEqual([[fifth, fourth], [third, second], [first]]);
     expect(pages[0]).toMatchObject({
       page: 1,
       limit: 2,
       total: 5,
       totalPages: 3,
     });
+  });
+
+  it('shows the last page when asked for a page past the end', async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const codes: string[] = [];
+    for (const n of [1, 2, 3]) {
+      await nextMillisecond();
+      const created = await links.createLink({
+        destination: `https://example.com/${n}`,
+        ownerId: owner,
+      });
+      codes.push(created.code);
+    }
+
+    const listed = await links.listLinks(owner, { page: 99, limit: 2 });
+
+    expect(listed.items.map((item) => item.code)).toEqual([codes[0]]);
+    expect(listed).toMatchObject({ page: 2, total: 3, totalPages: 2 });
+  });
+
+  it('shows page 1 with no Links when the Owner has none', async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+
+    const listed = await links.listLinks(owner, { page: 5, limit: 2 });
+
+    expect(listed).toMatchObject({ items: [], page: 1, total: 0 });
+  });
+
+  it.each([
+    { asked: { page: 0, limit: 2 }, shown: { page: 1, limit: 2 } },
+    { asked: { page: 1, limit: 61 }, shown: { page: 1, limit: 9 } },
+    { asked: {}, shown: { page: 1, limit: 9 } },
+  ])('lists $shown when asked for $asked', async ({ asked, shown }) => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+
+    await expect(links.listLinks(owner, asked)).resolves.toMatchObject(shown);
   });
 });
 
@@ -225,6 +265,73 @@ describe('Names', () => {
     ];
 
     expect(unnamed.map((link) => link.name)).toEqual([null, null]);
+  });
+});
+
+describe('Name length', () => {
+  it('accepts a Name of 80 characters', async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+
+    const link = await links.createLink({
+      destination: 'https://example.com',
+      name: 'n'.repeat(80),
+      ownerId: owner,
+    });
+
+    expect(link.name).toHaveLength(80);
+  });
+
+  it('rejects a longer Name for a new Link', async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+
+    await expect(
+      links.createLink({
+        destination: 'https://example.com',
+        name: 'n'.repeat(81),
+        ownerId: owner,
+      }),
+    ).rejects.toThrow(InvalidNameError);
+  });
+
+  it('shortens a taken 80-character Name so its numbered suffix still fits', async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const named = () =>
+      links.createLink({
+        destination: 'https://example.com',
+        name: 'n'.repeat(80),
+        ownerId: owner,
+      });
+    await named();
+
+    const second = await named();
+    const third = await named();
+
+    expect(second.name).toBe(`${'n'.repeat(76)} (2)`);
+    expect(third.name).toBe(`${'n'.repeat(76)} (3)`);
+  });
+
+  it('rejects a longer Name when renaming, and keeps the old Name', async () => {
+    const links = createLinks({ db });
+    const owner = await createOwner();
+    const link = await links.createLink({
+      destination: 'https://example.com',
+      name: 'Short',
+      ownerId: owner,
+    });
+
+    await expect(
+      links.renameLink({
+        ownerId: owner,
+        linkId: link.id,
+        name: 'n'.repeat(81),
+      }),
+    ).rejects.toThrow(InvalidNameError);
+
+    const listed = await links.listLinks(owner, { page: 1, limit: 10 });
+    expect(listed.items.map((item) => item.name)).toEqual(['Short']);
   });
 });
 

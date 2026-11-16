@@ -28,6 +28,10 @@ _Avoid_: guest link, public link
 A Link its Owner removed, or whose Owner deleted their User. Its Code no longer leads anywhere.
 _Avoid_: inactive link, archived link
 
+**Listing**:
+The slice of an Owner's Links the dashboard shows: a page, a page size, and an optional search. Asking for a page past the end shows the last page.
+_Avoid_: query, filter, pagination
+
 **Redirect**:
 Sending a Visitor from a Link to its Destination.
 _Avoid_: resolve, forward
