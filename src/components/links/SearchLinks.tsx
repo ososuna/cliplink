@@ -1,17 +1,15 @@
 import { navigate } from 'astro:transitions/client';
 import { useState, type ChangeEvent } from 'react';
 import { Input } from '@/components/ui/input';
-import { dashboardPath } from '@/paths';
+import { listingHref } from '@/links/listing';
 
-export default function SearchLinks({ search: initial }: { search: string }) {
+export default function SearchLinks(props: { search: string; limit: number }) {
+  const { search: initial, limit } = props;
   const [search, setSearch] = useState(initial);
 
   const onChange = (event: ChangeEvent<HTMLInputElement>) => {
     setSearch(event.target.value);
-    const params = new URLSearchParams();
-    if (event.target.value) params.set('search', event.target.value);
-    const query = params.toString();
-    void navigate(query ? `${dashboardPath}?${query}` : dashboardPath);
+    void navigate(listingHref({ search: event.target.value, limit }));
   };
 
   return (

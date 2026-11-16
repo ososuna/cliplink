@@ -11,5 +11,6 @@ export {
   type LinkPage,
   type Links,
 } from '@/links/links';
-export { nameMaxLength, nameSchema } from '@/links/name';
+export { listingFromQuery, listingHref, type Listing } from '@/links/listing';
+export { InvalidNameError, nameMaxLength, nameSchema } from '@/links/name';
 export { linkPath, linkUrl } from '@/links/url';

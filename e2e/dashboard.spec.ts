@@ -186,6 +186,27 @@ test('the dashboard pages through Links, newest first', async ({
   );
 });
 
+test('a page past the end shows the last page, and searching keeps the page size', async ({
+  page,
+  context,
+}) => {
+  const owner = await signIn(context);
+  for (let n = 1; n <= 3; n++) {
+    await links.createLink({
+      destination: `https://example.com/past-end/${n}`,
+      name: `Link ${n}`,
+      ownerId: owner.id,
+    });
+  }
+
+  await page.goto('/dashboard?page=99&limit=2');
+  await expect(linkCards(page).getByRole('heading')).toHaveText(['Link 1']);
+
+  await page.getByLabel('Search Links').fill('Link');
+  await expect(page).toHaveURL(/limit=2&search=Link$/);
+  await expect(linkCards(page)).toHaveCount(2);
+});
+
 test('an Owner renames and deletes a Link, and its Code then shows the 404 page', async ({
   page,
   context,
