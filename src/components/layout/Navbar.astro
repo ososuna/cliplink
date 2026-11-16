@@ -3,7 +3,7 @@ import { LogIn } from 'lucide-react';
 import UserMenu from '@/components/auth/UserMenu';
 import Logo from '@/components/layout/Logo.astro';
 import ModeToggle from '@/components/layout/ModeToggle';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { signInPath } from '@/paths';
 
@@ -29,11 +29,9 @@ const { user } = Astro.locals;
             <Skeleton slot="fallback" className="h-8 w-8 rounded-full" />
           </UserMenu>
         ) : (
-          <Button variant="ghost" asChild>
-            <a href={signInPath}>
-              <LogIn /> Log in
-            </a>
-          </Button>
+          <a href={signInPath} class={buttonVariants({ variant: 'ghost' })}>
+            <LogIn /> Log in
+          </a>
         )}
         <ModeToggle client:only="react">
           <Skeleton slot="fallback" className="h-9 w-9 rounded-md" />

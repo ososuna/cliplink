@@ -4,7 +4,7 @@ import { links } from '@/app';
 import HomeLayout from '@/components/layout/HomeLayout.astro';
 import Logo from '@/components/layout/Logo.astro';
 import CopyLink from '@/components/links/CopyLink';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -37,14 +37,17 @@ const shortUrl = linkUrl({ code, origin: Astro.url.origin });
       <CopyLink client:load id="short-url" url={shortUrl} />
     </CardContent>
     <CardFooter className="flex flex-wrap gap-4">
-      <Button asChild>
-        <a href={shortUrl} target="_blank" rel="noopener">
-          <ExternalLink /> Open Short URL
-        </a>
-      </Button>
-      <Button asChild variant="outline">
-        <a href="/">Shorten another URL</a>
-      </Button>
+      <a
+        href={shortUrl}
+        target="_blank"
+        rel="noopener"
+        class={buttonVariants()}
+      >
+        <ExternalLink /> Open Short URL
+      </a>
+      <a href="/" class={buttonVariants({ variant: 'outline' })}>
+        Shorten another URL
+      </a>
     </CardFooter>
   </Card>
 </HomeLayout>

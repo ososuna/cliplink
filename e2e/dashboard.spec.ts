@@ -73,6 +73,66 @@ test('an Owner creates Links, finds them, and copies one', async ({
   await expect(page.getByText('No Links found matching')).toBeVisible();
 });
 
+test('a Link card shows Navigate as an icon button like Copy', async ({
+  page,
+  context,
+}) => {
+  const owner = await signIn(context);
+  await links.createLink({
+    destination: 'https://example.com/navigate',
+    name: 'Navigate me',
+    ownerId: owner.id,
+  });
+  await page.goto('/dashboard');
+  const card = linkCards(page).first();
+
+  const copy = card.getByRole('button', { name: 'Copy' });
+  const navigate = card.getByRole('link', { name: 'Navigate' });
+  await expect(copy).toBeVisible();
+  const [copyBox, navigateBox] = await Promise.all([
+    copy.boundingBox(),
+    navigate.boundingBox(),
+  ]);
+  expect(copyBox).toMatchObject({ width: 36, height: 36 });
+  expect(navigateBox).toMatchObject({ width: 36, height: 36, y: copyBox?.y });
+  await expect(navigate).toHaveCSS('border-top-width', '1px');
+});
+
+for (const viewport of [
+  { width: 1280, height: 800 },
+  { width: 375, height: 812 },
+]) {
+  test(`a Link card truncates a long Name and Destination at ${viewport.width}px`, async ({
+    page,
+    context,
+  }) => {
+    const owner = await signIn(context);
+    const name =
+      'A really long Link name that should truncate nicely, and then keeps going';
+    const destination = `https://example.com/${'very/long/path/'.repeat(12)}?utm_source=newsletter`;
+    await links.createLink({ destination, name, ownerId: owner.id });
+    await page.setViewportSize(viewport);
+    await page.goto('/dashboard');
+    const card = linkCards(page).first();
+
+    const cardBox = await card.boundingBox();
+    for (const text of [
+      card.getByRole('heading'),
+      card.getByTitle(destination),
+    ]) {
+      const box = await text.boundingBox();
+      expect(box!.x + box!.width).toBeLessThanOrEqual(
+        cardBox!.x + cardBox!.width,
+      );
+    }
+    await expect(card.getByRole('heading')).toHaveAttribute('title', name);
+    const scrollWidth = await page.evaluate(
+      () => document.documentElement.scrollWidth,
+    );
+    expect(scrollWidth).toBe(viewport.width);
+  });
+}
+
 test("an Owner never sees another User's Links", async ({ page, context }) => {
   const other = await signIn(context);
   await links.createLink({

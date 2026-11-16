@@ -3,7 +3,7 @@ import { ExternalLink } from 'lucide-react';
 import CopyButton from '@/components/links/CopyButton';
 import DeleteLinkDialog from '@/components/links/DeleteLinkDialog';
 import RenameLinkDialog from '@/components/links/RenameLinkDialog';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import {
   Card,
   CardDescription,
@@ -23,10 +23,10 @@ const path = linkPath(link.code);
 
 <article>
   <Card className="h-full">
-    <CardHeader>
-      <div class="flex items-center gap-2">
+    <CardHeader className="grid-cols-1">
+      <div class="flex min-w-0 items-center gap-2">
         <h2
-          class="flex-1 truncate text-lg leading-none font-semibold"
+          class="min-w-0 flex-1 truncate text-lg leading-none font-semibold"
           title={link.name ?? path}
         >
           {link.name ?? path}
@@ -41,16 +41,15 @@ const path = linkPath(link.code);
     </CardHeader>
     <CardFooter className="mt-auto flex gap-2">
       <CopyButton client:load url={shortUrl} />
-      <Button asChild variant="outline" size="icon">
-        <a
-          href={link.destination}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Navigate"
-        >
-          <ExternalLink />
-        </a>
-      </Button>
+      <a
+        href={link.destination}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Navigate"
+        class={buttonVariants({ variant: 'outline', size: 'icon' })}
+      >
+        <ExternalLink />
+      </a>
       <RenameLinkDialog client:load linkId={link.id} name={link.name} />
       <DeleteLinkDialog client:load linkId={link.id} />
     </CardFooter>
