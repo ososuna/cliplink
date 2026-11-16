@@ -18,6 +18,13 @@ test('a Visitor creates an Anonymous Link, copies it, and follows it', async ({
   const code = new URL(page.url()).pathname.split('/').at(-1)!;
   const shortUrl = `${baseURL}/${code}`;
   await expect(page.getByLabel('Short URL')).toHaveValue(shortUrl);
+  const open = page.getByRole('link', { name: 'Open Short URL' });
+  const another = page.getByRole('link', { name: 'Shorten another URL' });
+  await expect(open).toHaveAttribute('href', shortUrl);
+  await expect(open).toHaveCSS('height', '36px');
+  await expect(open).not.toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  await expect(another).toHaveCSS('height', '36px');
+  await expect(another).toHaveCSS('border-top-width', '1px');
 
   await page.getByRole('button', { name: 'Copy' }).click();
   await expect(page.getByRole('button', { name: 'Copied' })).toBeVisible();

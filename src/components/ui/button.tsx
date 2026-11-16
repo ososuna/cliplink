@@ -47,6 +47,8 @@ function Button({
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
   }) {
+  // Don't use asChild from .astro files: Astro passes children as static slot HTML,
+  // which Slot can't merge classes into. Put buttonVariants() on the <a> instead.
   const Comp = asChild ? Slot.Root : 'button';
 
   return (

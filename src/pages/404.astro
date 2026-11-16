@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '@/components/layout/BaseLayout.astro';
 import Logo from '@/components/layout/Logo.astro';
-import { Button } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -26,9 +26,9 @@ export const prerender = true;
         <p class="text-xl text-muted-foreground">Page not found</p>
       </CardContent>
       <CardFooter className="flex justify-center">
-        <Button asChild>
-          <a href="/">Go Home</a>
-        </Button>
+        <a href="/" class={buttonVariants()}>
+          Go Home
+        </a>
       </CardFooter>
     </Card>
   </div>
